@@ -4,7 +4,7 @@ COPY pom.xml .
 RUN mvn -q -DskipTests dependency:go-offline
 COPY src ./src
 RUN mvn -q package -DskipTests
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 RUN apk upgrade --no-cache && addgroup -S app && adduser -S app -G app
 USER app
 WORKDIR /app
