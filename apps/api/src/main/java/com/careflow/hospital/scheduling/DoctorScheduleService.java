@@ -1,0 +1,25 @@
+package com.careflow.hospital.scheduling;
+
+import com.careflow.hospital.audit.AuditService;
+import com.careflow.hospital.doctors.*;
+import com.careflow.hospital.shared.DomainException;
+import java.time.LocalTime;
+import java.util.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service public class DoctorScheduleService {
+  private final DoctorRepository doctors; private final DoctorScheduleRepository schedules; private final DoctorScheduleExceptionRepository exceptions; private final AuditService audit;
+  public DoctorScheduleService(DoctorRepository doctors,DoctorScheduleRepository schedules,DoctorScheduleExceptionRepository exceptions,AuditService audit){this.doctors=doctors;this.schedules=schedules;this.exceptions=exceptions;this.audit=audit;}
+  @Transactional public ScheduleDtos.ScheduleView createSchedule(UUID userId,ScheduleDtos.CreateSchedule request){var doctor=doctor(userId);validateRange(request.startsAt(),request.endsAt());boolean overlaps=schedules.findAllByDoctorIdAndDayOfWeekAndActiveTrue(doctor.getId(),request.dayOfWeek()).stream().anyMatch(s->request.startsAt().isBefore(s.getEndsAt())&&request.endsAt().isAfter(s.getStartsAt()));if(overlaps)throw new DomainException(HttpStatus.CONFLICT,"SCHEDULE_OVERLAP","The schedule overlaps existing availability.");var schedule=schedules.save(new DoctorSchedule(doctor.getId(),request.dayOfWeek(),request.startsAt(),request.endsAt(),request.slotDurationMinutes()));audit.record(userId,"DOCTOR_SCHEDULE_CREATED","DOCTOR_SCHEDULE",schedule.getId(),"SUCCESS");return view(schedule);}
+  @Transactional(readOnly=true) public List<ScheduleDtos.ScheduleView> schedules(UUID userId){return schedules.findAllByDoctorIdAndActiveTrueOrderByDayOfWeekAscStartsAtAsc(doctor(userId).getId()).stream().map(this::view).toList();}
+  @Transactional public void removeSchedule(UUID userId,UUID scheduleId){var doctor=doctor(userId);var schedule=schedules.findById(scheduleId).orElseThrow(()->notFound("SCHEDULE_NOT_FOUND","Schedule was not found."));if(!schedule.getDoctorId().equals(doctor.getId()))throw notFound("SCHEDULE_NOT_FOUND","Schedule was not found.");schedule.deactivate();audit.record(userId,"DOCTOR_SCHEDULE_DEACTIVATED","DOCTOR_SCHEDULE",scheduleId,"SUCCESS");}
+  @Transactional public ScheduleDtos.ExceptionView createException(UUID userId,ScheduleDtos.CreateException request){var doctor=doctor(userId);if((request.startsAt()==null)!=(request.endsAt()==null))throw invalid("Both exception start and end times are required together.");if("AVAILABLE".equals(request.type())&&(request.startsAt()==null||request.slotDurationMinutes()==null))throw invalid("Available exceptions require a time range and slot duration.");if(request.startsAt()!=null)validateRange(request.startsAt(),request.endsAt());var exception=exceptions.save(new DoctorScheduleException(doctor.getId(),request.date(),request.type(),request.startsAt(),request.endsAt(),request.slotDurationMinutes(),clean(request.reason())));audit.record(userId,"DOCTOR_SCHEDULE_EXCEPTION_CREATED","DOCTOR_SCHEDULE_EXCEPTION",exception.getId(),"SUCCESS");return view(exception);}
+  @Transactional(readOnly=true) public List<ScheduleDtos.ExceptionView> exceptions(UUID userId){return exceptions.findAllByDoctorIdOrderByDateAscStartsAtAsc(doctor(userId).getId()).stream().map(this::view).toList();}
+  @Transactional public void removeException(UUID userId,UUID exceptionId){var doctor=doctor(userId);var exception=exceptions.findById(exceptionId).orElseThrow(()->notFound("SCHEDULE_EXCEPTION_NOT_FOUND","Schedule exception was not found."));if(!exception.getDoctorId().equals(doctor.getId()))throw notFound("SCHEDULE_EXCEPTION_NOT_FOUND","Schedule exception was not found.");exceptions.delete(exception);audit.record(userId,"DOCTOR_SCHEDULE_EXCEPTION_DELETED","DOCTOR_SCHEDULE_EXCEPTION",exceptionId,"SUCCESS");}
+  private Doctor doctor(UUID userId){return doctors.findByUserId(userId).filter(Doctor::isActive).orElseThrow(()->new DomainException(HttpStatus.FORBIDDEN,"ACTIVE_DOCTOR_REQUIRED","An approved, active doctor profile is required."));}
+  private void validateRange(LocalTime start,LocalTime end){if(!end.isAfter(start))throw invalid("End time must be after start time.");}
+  private DomainException invalid(String message){return new DomainException(HttpStatus.BAD_REQUEST,"INVALID_TIME_RANGE",message);} private DomainException notFound(String code,String message){return new DomainException(HttpStatus.NOT_FOUND,code,message);} private String clean(String value){return value==null?null:value.strip();}
+  private ScheduleDtos.ScheduleView view(DoctorSchedule s){return new ScheduleDtos.ScheduleView(s.getId(),s.getDayOfWeek(),s.getStartsAt(),s.getEndsAt(),s.getSlotDurationMinutes());}private ScheduleDtos.ExceptionView view(DoctorScheduleException e){return new ScheduleDtos.ExceptionView(e.getId(),e.getDate(),e.getType(),e.getStartsAt(),e.getEndsAt(),e.getSlotDurationMinutes(),e.getReason());}
+}

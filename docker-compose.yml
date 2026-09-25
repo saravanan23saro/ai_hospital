@@ -1,0 +1,76 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hospital}
+      POSTGRES_USER: ${DATABASE_USERNAME:-hospital}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-hospital-dev-only}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes: ["postgres-data:/var/lib/postgresql/data"]
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes: ["redis-data:/data"]
+  ai-service:
+    build: ./apps/ai-service
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+    ports: ["8000:8000"]
+  api:
+    build: ./apps/api
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-jdbc:postgresql://postgres:5432/hospital}
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-hospital}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-hospital-dev-only}
+      REDIS_HOST: redis
+      AI_SERVICE_URL: http://ai-service:8000
+      JWT_SECRET: ${JWT_SECRET:-development-secret-must-be-replaced-123456}
+      HOSPITAL_TIMEZONE: ${HOSPITAL_TIMEZONE:-Asia/Kolkata}
+      HOSPITAL_ENVIRONMENT: ${HOSPITAL_ENVIRONMENT:-development}
+      WEB_ORIGIN: http://localhost:${WEB_PORT:-3200}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-admin@careflow.local}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-CareFlowAdmin!2026}
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      ai-service: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health/readiness"]
+      interval: 10s
+      timeout: 3s
+      retries: 18
+    ports: ["${API_PORT:-8180}:8080"]
+  web:
+    build: ./apps/web
+    environment:
+      API_INTERNAL_URL: http://api:8080
+      NEXT_PUBLIC_API_URL: http://localhost:${API_PORT:-8180}
+    depends_on:
+      api: {condition: service_healthy}
+    ports: ["${WEB_PORT:-3200}:3000"]
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - "./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+      - "./infrastructure/monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro"
+    ports: ["9090:9090"]
+  grafana:
+    image: grafana/grafana:11.2.2
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-hospital-dev-only}
+    ports: ["${GRAFANA_PORT:-3101}:3000"]
+volumes:
+  postgres-data:
+  redis-data:

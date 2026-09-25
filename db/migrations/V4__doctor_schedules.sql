@@ -1,0 +1,1 @@
+-- Executable migration is packaged at apps/api/src/main/resources/db/migration/V4__doctor_schedules.sql.

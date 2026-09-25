@@ -1,0 +1,2 @@
+-- Canonical source is mirrored in apps/api/src/main/resources/db/migration/V10__seed_department_doctors.sql.
+-- It adds five approved synthetic doctors and weekday schedules per department for development.

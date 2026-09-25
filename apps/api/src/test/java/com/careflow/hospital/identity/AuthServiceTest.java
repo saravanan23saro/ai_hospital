@@ -1,0 +1,8 @@
+package com.careflow.hospital.identity;
+import com.careflow.hospital.patients.PatientRepository; import com.careflow.hospital.shared.DomainException; import org.junit.jupiter.api.*; import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; import java.util.*; import static org.junit.jupiter.api.Assertions.*; import static org.mockito.ArgumentMatchers.any; import static org.mockito.Mockito.*;
+class AuthServiceTest {
+ AppUserRepository users=mock(AppUserRepository.class); PatientRepository patients=mock(PatientRepository.class); RefreshSessionRepository sessions=mock(RefreshSessionRepository.class); TokenService tokens=new TokenService("test-secret-key-with-at-least-thirty-two-characters"); AuthService service;
+ @BeforeEach void setup(){service=new AuthService(users,patients,sessions,new BCryptPasswordEncoder(4),tokens);when(users.save(any())).thenAnswer(i->i.getArgument(0));when(patients.save(any())).thenAnswer(i->i.getArgument(0));when(sessions.save(any())).thenAnswer(i->i.getArgument(0));}
+ @Test void registrationAlwaysCreatesPatientRoleAndProfile(){var result=service.register(new AuthDtos.Register("USER@Example.com","very-secure-password","A Patient"));verify(users).save(argThat(u->u.getRoles().equals(Set.of("PATIENT"))&&u.getEmail().equals("user@example.com")));verify(patients).save(any());assertEquals("Bearer",result.tokenType());}
+ @Test void duplicateEmailIsConflict(){when(users.existsByEmailIgnoreCase("user@example.com")).thenReturn(true);DomainException e=assertThrows(DomainException.class,()->service.register(new AuthDtos.Register("user@example.com","very-secure-password","A Patient")));assertEquals("EMAIL_ALREADY_REGISTERED",e.code());verify(users,never()).save(any());}
+}

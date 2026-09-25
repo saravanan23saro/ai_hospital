@@ -1,0 +1,2 @@
+-- Canonical source mirrored into apps/api/src/main/resources/db/migration for image packaging.
+-- See that file for the executable Phase 0 migration.

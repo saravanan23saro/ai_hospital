@@ -1,0 +1,6 @@
+export type CareFlowSession={accessToken:string;refreshToken:string};
+const KEY="careflowSession";
+export function loadSession():CareFlowSession|null{if(typeof window==="undefined")return null;try{const raw=sessionStorage.getItem(KEY);return raw?JSON.parse(raw)as CareFlowSession:null}catch{sessionStorage.removeItem(KEY);return null}}
+export function saveSession(session:CareFlowSession){sessionStorage.setItem(KEY,JSON.stringify(session))}
+export function clearStoredSession(){sessionStorage.removeItem(KEY)}
+export async function sessionFetch(apiUrl:string,path:string,options:RequestInit={}):Promise<Response>{let session=loadSession();if(!session)throw new Error("Please sign in to continue.");const send=(token:string)=>fetch(apiUrl+path,{...options,headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`,...options.headers}});let response=await send(session.accessToken);if(response.status!==401)return response;const refreshed=await fetch(apiUrl+"/api/v1/auth/refresh",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({refreshToken:session.refreshToken})});if(!refreshed.ok){clearStoredSession();return response}const tokens=await refreshed.json();session={accessToken:tokens.accessToken,refreshToken:tokens.refreshToken};saveSession(session);return send(session.accessToken)}

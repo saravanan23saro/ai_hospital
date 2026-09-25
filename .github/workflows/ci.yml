@@ -1,0 +1,164 @@
+name: ci
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    defaults: {run: {working-directory: apps/api}}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Flyway migration integrity
+        shell: pwsh
+        working-directory: .
+        run: ./scripts/validate-migrations.ps1
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: "21", cache: maven}
+      - run: mvn --batch-mode test
+  web:
+    runs-on: ubuntu-latest
+    defaults: {run: {working-directory: apps/web}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "22", cache: npm, cache-dependency-path: apps/web/package-lock.json}
+      - run: npm ci
+      - run: npm run build
+  ai:
+    runs-on: ubuntu-latest
+    defaults: {run: {working-directory: apps/ai-service}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip, cache-dependency-path: apps/ai-service/requirements.txt}
+      - run: pip install -r requirements.txt
+      - run: pytest
+  supply-chain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: "21", cache: maven}
+      - name: Resolve Java dependency metadata
+        working-directory: apps/api
+        run: mvn --batch-mode dependency:go-offline
+      - name: Scan dependencies, secrets, and configuration
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: 1
+          skip-dirs: apps/api/target,apps/web/node_modules,apps/web/.next,apps/web/test-results,apps/web/playwright-report
+  integration:
+    runs-on: ubuntu-latest
+    needs: [api, web, ai, supply-chain]
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and start the stack
+        run: docker compose up -d --build --wait
+      - name: Scan API runtime image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ai_powered-api:latest
+          severity: HIGH,CRITICAL
+          pkg-types: os
+          ignore-unfixed: true
+          exit-code: 1
+      - name: Scan web runtime image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ai_powered-web:latest
+          severity: HIGH,CRITICAL
+          pkg-types: os
+          ignore-unfixed: true
+          exit-code: 1
+          skip-setup-trivy: true
+      - name: Scan AI runtime image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ai_powered-ai-service:latest
+          severity: HIGH,CRITICAL
+          pkg-types: os
+          ignore-unfixed: true
+          exit-code: 1
+          skip-setup-trivy: true
+      - name: Generate API CycloneDX SBOM
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ai_powered-api:latest
+          format: cyclonedx
+          output: sbom-api.cdx.json
+          scanners: vuln
+          skip-setup-trivy: true
+      - name: Generate web CycloneDX SBOM
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ai_powered-web:latest
+          format: cyclonedx
+          output: sbom-web.cdx.json
+          scanners: vuln
+          skip-setup-trivy: true
+      - name: Generate AI CycloneDX SBOM
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ai_powered-ai-service:latest
+          format: cyclonedx
+          output: sbom-ai.cdx.json
+          scanners: vuln
+          skip-setup-trivy: true
+      - name: Bind image IDs and SBOM checksums
+        shell: pwsh
+        run: ./scripts/generate-release-manifest.ps1
+      - name: Upload release security evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-security-evidence
+          path: |
+            sbom-*.cdx.json
+            release-evidence.json
+          if-no-files-found: error
+      - name: Run acceptance checks
+        shell: pwsh
+        run: ./scripts/acceptance-smoke.ps1
+      - name: Install browser acceptance dependencies
+        working-directory: apps/web
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Run browser journeys
+        working-directory: apps/web
+        run: npm run test:e2e
+      - name: Run resilience and concurrent-load acceptance
+        shell: pwsh
+        run: ./scripts/resilience-load.ps1
+      - name: Run deployed security-boundary acceptance
+        shell: pwsh
+        run: ./scripts/security-boundary.ps1
+      - name: Validate monitoring
+        shell: pwsh
+        run: ./scripts/validate-monitoring.ps1
+      - name: Create database backup
+        shell: pwsh
+        run: ./scripts/backup.ps1 -OutputDirectory ./backups
+      - name: Verify latest backup restore
+        shell: pwsh
+        run: |
+          $backup = Get-ChildItem ./backups/*.dump | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $backup) { throw "No backup artifact was created." }
+          ./scripts/verify-restore.ps1 -BackupFile $backup.FullName
+      - name: Capture service logs on failure
+        if: failure()
+        run: docker compose logs --no-color > compose-failure.log
+      - name: Upload failure logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compose-failure-logs
+          path: compose-failure.log
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v

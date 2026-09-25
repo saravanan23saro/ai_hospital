@@ -1,0 +1,7 @@
+package com.careflow.hospital.doctors;
+import jakarta.validation.Valid; import java.util.*; import org.springframework.http.*; import org.springframework.security.access.prepost.PreAuthorize; import org.springframework.security.core.Authentication; import org.springframework.web.bind.annotation.*;
+@RestController @RequestMapping("/api/v1") public class DoctorOnboardingController {private final DoctorOnboardingService onboarding;public DoctorOnboardingController(DoctorOnboardingService o){onboarding=o;}
+ @PostMapping("/doctors/applications") @PreAuthorize("isAuthenticated()") ResponseEntity<DoctorDtos.ApplicationView> apply(Authentication authentication,@Valid @RequestBody DoctorDtos.Apply request){return ResponseEntity.status(HttpStatus.CREATED).body(onboarding.apply(UUID.fromString(authentication.getName()),request));}
+ @GetMapping("/doctors/me/profile") @PreAuthorize("hasRole('DOCTOR')") DoctorDtos.ProfileView profile(Authentication authentication){return onboarding.profile(UUID.fromString(authentication.getName()));}
+ @GetMapping("/admin/doctor-applications") @PreAuthorize("hasRole('ADMIN')") List<DoctorDtos.ApplicationView> pending(){return onboarding.pending();}
+ @PostMapping("/admin/doctor-applications/{applicationId}/review") @PreAuthorize("hasRole('ADMIN')") DoctorDtos.ApplicationView review(Authentication authentication,@PathVariable UUID applicationId,@Valid @RequestBody DoctorDtos.Review request){return onboarding.review(UUID.fromString(authentication.getName()),applicationId,request.decision());}}

@@ -1,0 +1,1 @@
+package com.careflow.hospital.departments; import java.util.*; import org.springframework.data.jpa.repository.JpaRepository; public interface DepartmentRepository extends JpaRepository<Department,UUID>{List<Department> findAllByActiveTrueOrderByNameAsc();}

@@ -1,0 +1,3 @@
+package com.careflow.hospital.scheduling;
+import java.time.LocalDate;import java.util.*;import org.springframework.format.annotation.DateTimeFormat;import org.springframework.web.bind.annotation.*;
+@RestController @RequestMapping("/api/v1/slots") public class SlotController {private final SlotGenerationService service;public SlotController(SlotGenerationService service){this.service=service;}@GetMapping public List<SlotDtos.Slot> list(@RequestParam UUID departmentId,@RequestParam(required=false)UUID doctorId,@RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE)LocalDate date){return service.generate(departmentId,doctorId,date);}}

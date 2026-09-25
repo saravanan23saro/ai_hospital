@@ -1,0 +1,2 @@
+-- Canonical source is mirrored in apps/api/src/main/resources/db/migration/V11__uniquify_seed_doctors.sql.
+-- It assigns unique names and experience values to all synthetic doctors.

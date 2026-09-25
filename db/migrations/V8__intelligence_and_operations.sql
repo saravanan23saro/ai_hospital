@@ -1,0 +1,3 @@
+-- Canonical source is mirrored in apps/api/src/main/resources/db/migration/V8__intelligence_and_operations.sql.
+-- It adds recommendation feedback, notifications, billing, clinical records,
+-- laboratory orders, emergency cases, and capacity snapshots.

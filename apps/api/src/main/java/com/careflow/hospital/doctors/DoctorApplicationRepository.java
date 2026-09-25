@@ -1,0 +1,1 @@
+package com.careflow.hospital.doctors; import java.util.*; import org.springframework.data.jpa.repository.JpaRepository; public interface DoctorApplicationRepository extends JpaRepository<DoctorApplication,UUID>{boolean existsByUserId(UUID userId);boolean existsByLicenseNumberIgnoreCase(String license);List<DoctorApplication> findAllByStatusOrderByCreatedAtAsc(String status);}

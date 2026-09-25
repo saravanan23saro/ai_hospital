@@ -1,0 +1,2 @@
+-- Canonical source is mirrored in apps/api/src/main/resources/db/migration/V9__patient_health_details.sql.
+-- It adds blood group, allergies, and medical-condition details to patient profiles.

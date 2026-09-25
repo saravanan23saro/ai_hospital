@@ -1,0 +1,6 @@
+package com.careflow.hospital.outbox;
+import java.util.*;import org.slf4j.*;import org.springframework.jdbc.core.JdbcTemplate;import org.springframework.scheduling.annotation.Scheduled;import org.springframework.stereotype.Service;import org.springframework.transaction.annotation.Transactional;
+@Service public class OutboxDispatcher {private static final Logger log=LoggerFactory.getLogger(OutboxDispatcher.class);private final JdbcTemplate jdbc;public OutboxDispatcher(JdbcTemplate j){jdbc=j;}
+ @Scheduled(fixedDelayString="${hospital.outbox-delay-ms:5000}")@Transactional public void dispatch(){var ids=jdbc.query("select event_id from outbox_event where status='PENDING' and attempts<10 order by occurred_at limit 100 for update skip locked",(rs,n)->rs.getObject(1,UUID.class));for(UUID id:ids){try{// Provider adapters consume the durable event; the local adapter only acknowledges delivery.
+ jdbc.update("update outbox_event set status='SENT',attempts=attempts+1 where event_id=?",id);}catch(Exception e){jdbc.update("update outbox_event set attempts=attempts+1,status=case when attempts+1>=10 then 'FAILED' else 'PENDING' end where event_id=?",id);log.warn("Outbox delivery failed for event {}",id);}}}
+}

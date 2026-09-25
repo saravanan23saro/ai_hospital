@@ -1,0 +1,6 @@
+package com.careflow.hospital.identity;
+import org.junit.jupiter.api.Test;import org.springframework.mock.web.*;import static org.junit.jupiter.api.Assertions.*;
+class AuthenticationRateLimitFilterTest {
+ @Test void limitsAuthenticationAttemptsPerAddressAndRoute()throws Exception{var filter=new AuthenticationRateLimitFilter(1);var first=new MockHttpServletRequest("POST","/api/v1/auth/login");first.setRemoteAddr("192.0.2.10");var firstResponse=new MockHttpServletResponse();filter.doFilter(first,firstResponse,new MockFilterChain());assertEquals(200,firstResponse.getStatus());var second=new MockHttpServletRequest("POST","/api/v1/auth/login");second.setRemoteAddr("192.0.2.10");var blocked=new MockHttpServletResponse();filter.doFilter(second,blocked,new MockFilterChain());assertEquals(429,blocked.getStatus());assertEquals("60",blocked.getHeader("Retry-After"));assertTrue(blocked.getContentAsString().contains("AUTH_RATE_LIMITED"));}
+ @Test void doesNotLimitNonAuthenticationRoutes()throws Exception{var filter=new AuthenticationRateLimitFilter(0);var request=new MockHttpServletRequest("GET","/api/v1/departments");var response=new MockHttpServletResponse();filter.doFilter(request,response,new MockFilterChain());assertEquals(200,response.getStatus());}
+}

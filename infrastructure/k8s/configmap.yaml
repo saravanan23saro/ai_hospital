@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: careflow-config
+  namespace: careflow-hospital
+data:
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/hospital"
+  SPRING_DATA_REDIS_HOST: "redis"
+  SPRING_DATA_REDIS_PORT: "6379"
+  HOSPITAL_AI_SERVICE_URL: "http://ai-service:8000"
+  NEXT_PUBLIC_API_URL: "http://api:8080"
+  EMAIL_PROVIDER: "log"
+  SMS_PROVIDER: "log"
+  PAYMENT_PROVIDER: "mock"
