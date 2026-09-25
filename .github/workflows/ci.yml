@@ -12,7 +12,7 @@ jobs:
         shell: pwsh
         working-directory: .
         run: ./scripts/validate-migrations.ps1
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with: {distribution: temurin, java-version: "21", cache: maven}
       - run: mvn --batch-mode test
   web:
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with: {distribution: temurin, java-version: "21", cache: maven}
       - name: Resolve Java dependency metadata
         working-directory: apps/api
