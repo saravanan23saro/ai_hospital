@@ -54,7 +54,7 @@ services:
       - key: BOOTSTRAP_ADMIN_PASSWORD
         value: CareFlowAdmin!2026
       - key: HOSPITAL_ENVIRONMENT
-        value: production
+        value: development
       - key: HOSPITAL_TIMEZONE
         value: Asia/Kolkata
       - key: WEB_ORIGIN

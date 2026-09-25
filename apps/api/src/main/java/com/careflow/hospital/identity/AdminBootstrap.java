@@ -8,8 +8,13 @@ public class AdminBootstrap implements ApplicationRunner {
   }
   @Override @Transactional
   public void run(ApplicationArguments args) {
-    if (email == null || email.isBlank() || password == null || password.isBlank()) return;
-    if (password.length() < 12) return;
+    if (email.isBlank() && password.isBlank()) return;
+    if (!Set.of("development", "test").contains(environment.toLowerCase(Locale.ROOT)))
+      throw new IllegalStateException("Bootstrap administrator is allowed only in development or test environments");
+    if (email.isBlank() || password.isBlank())
+      throw new IllegalStateException("Both bootstrap administrator email and password are required");
+    if (password.length() < 12)
+      throw new IllegalStateException("Bootstrap admin password must contain at least 12 characters");
     users.findByEmailIgnoreCase(email.strip().toLowerCase(Locale.ROOT)).orElseGet(() -> {
       var user = new AppUser(UUID.randomUUID(), email.strip().toLowerCase(Locale.ROOT), passwords.encode(password));
       user.addRole("ADMIN");
