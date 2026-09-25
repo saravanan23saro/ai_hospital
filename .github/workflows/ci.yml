@@ -114,7 +114,7 @@ jobs:
         shell: pwsh
         run: ./scripts/generate-release-manifest.ps1
       - name: Upload release security evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-security-evidence
           path: |
@@ -155,7 +155,7 @@ jobs:
         run: docker compose logs --no-color > compose-failure.log
       - name: Upload failure logs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: compose-failure-logs
           path: compose-failure.log
