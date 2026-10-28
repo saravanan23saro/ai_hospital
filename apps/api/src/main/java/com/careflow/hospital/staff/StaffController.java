@@ -36,6 +36,7 @@ public class StaffController {
   private final DoctorRepository doctors;
   private final AppointmentService appointmentService;
   private final PasswordEncoder passwordEncoder;
+  private final StaffAccessService staffAccessService;
 
   public record StaffProfileView(
       UUID staffId,
@@ -52,6 +53,29 @@ public class StaffController {
       String designation,
       LocalDate joiningDate,
       boolean active
+  ) {}
+
+  public record StaffDoctorView(
+      UUID doctorId,
+      String fullName,
+      String specialization,
+      UUID departmentId,
+      String departmentName,
+      Long consultationFee,
+      boolean active
+  ) {}
+
+  public record StaffPatientView(
+      UUID patientId,
+      String patientNumber,
+      String fullName,
+      LocalDate dateOfBirth,
+      String gender,
+      String phone,
+      String bloodGroup,
+      String emergencyContact,
+      String allergies,
+      String medicalConditions
   ) {}
 
   public record PatientWalkInRegister(
@@ -75,16 +99,6 @@ public class StaffController {
       Instant endsAt
   ) {}
 
-  public record StaffDoctorView(
-      UUID doctorId,
-      String fullName,
-      String specialization,
-      UUID departmentId,
-      String departmentName,
-      Long consultationFee,
-      boolean active
-  ) {}
-
   public StaffController(
       StaffMemberRepository staffMembers,
       AppUserRepository users,
@@ -92,7 +106,8 @@ public class StaffController {
       PatientRepository patients,
       DoctorRepository doctors,
       AppointmentService appointmentService,
-      PasswordEncoder passwordEncoder) {
+      PasswordEncoder passwordEncoder,
+      StaffAccessService staffAccessService) {
     this.staffMembers = staffMembers;
     this.users = users;
     this.departments = departments;
@@ -100,6 +115,7 @@ public class StaffController {
     this.doctors = doctors;
     this.appointmentService = appointmentService;
     this.passwordEncoder = passwordEncoder;
+    this.staffAccessService = staffAccessService;
   }
 
   @GetMapping("/me")
@@ -152,6 +168,95 @@ public class StaffController {
     );
   }
 
+  @GetMapping("/doctors")
+  public List<StaffDoctorView> getDoctors(Authentication auth) {
+    Map<UUID, String> deptNames = departments.findAll().stream()
+        .collect(Collectors.toMap(Department::getId, Department::getName, (a, b) -> a));
+
+    boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    List<Doctor> docList;
+    if (isAdmin) {
+      docList = doctors.findAllByActiveTrueOrderByFullNameAsc();
+    } else {
+      UUID userId = UUID.fromString(auth.getName());
+      StaffMember staff = staffAccessService.getStaffMember(userId);
+      docList = staffAccessService.getAssignedDoctors(staff);
+    }
+
+    return docList.stream()
+        .map(d -> new StaffDoctorView(
+            d.getId(),
+            d.getFullName(),
+            d.getSpecialization(),
+            d.getDepartmentId(),
+            deptNames.getOrDefault(d.getDepartmentId(), "General"),
+            d.getConsultationFee(),
+            d.isActive()
+        ))
+        .toList();
+  }
+
+  @GetMapping("/doctors/{id}")
+  public StaffDoctorView getDoctor(Authentication auth, @PathVariable UUID id) {
+    staffAccessService.checkDoctorAccess(auth, id);
+    Doctor d = doctors.findById(id)
+        .orElseThrow(() -> new DomainException(HttpStatus.NOT_FOUND, "DOCTOR_NOT_FOUND", "Doctor profile not found."));
+    String deptName = d.getDepartmentId() != null
+        ? departments.findById(d.getDepartmentId()).map(Department::getName).orElse("General")
+        : "General";
+    return new StaffDoctorView(
+        d.getId(),
+        d.getFullName(),
+        d.getSpecialization(),
+        d.getDepartmentId(),
+        deptName,
+        d.getConsultationFee(),
+        d.isActive()
+    );
+  }
+
+  @GetMapping("/patients")
+  public List<StaffPatientView> getAssignedPatients(
+      Authentication auth,
+      @RequestParam(value = "query", required = false) String query) {
+    boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    if (isAdmin) {
+      return patients.findAll().stream()
+          .filter(p -> query == null || query.isBlank()
+              || (p.getFullName() != null && p.getFullName().toLowerCase().contains(query.trim().toLowerCase()))
+              || (p.getPatientNumber() != null && p.getPatientNumber().toLowerCase().contains(query.trim().toLowerCase())))
+          .map(this::mapPatientView)
+          .toList();
+    }
+
+    UUID userId = UUID.fromString(auth.getName());
+    StaffMember staff = staffAccessService.getStaffMember(userId);
+    List<Map<String, Object>> patientRows = (query != null && !query.isBlank())
+        ? staffAccessService.searchAssignedPatients(staff, query)
+        : staffAccessService.getAssignedPatientsList(staff);
+
+    return patientRows.stream().map(r -> new StaffPatientView(
+        (UUID) r.get("patient_id"),
+        (String) r.get("patient_number"),
+        (String) r.get("full_name"),
+        r.get("date_of_birth") != null ? ((java.sql.Date) r.get("date_of_birth")).toLocalDate() : null,
+        (String) r.get("gender"),
+        (String) r.get("phone"),
+        (String) r.get("blood_group"),
+        (String) r.get("emergency_contact"),
+        (String) r.get("allergies"),
+        (String) r.get("medical_conditions")
+    )).toList();
+  }
+
+  @GetMapping("/patients/{id}")
+  public StaffPatientView getPatient(Authentication auth, @PathVariable UUID id) {
+    staffAccessService.checkPatientAccess(auth, id);
+    Patient p = patients.findById(id)
+        .orElseThrow(() -> new DomainException(HttpStatus.NOT_FOUND, "PATIENT_NOT_FOUND", "Patient profile not found."));
+    return mapPatientView(p);
+  }
+
   @PostMapping("/patients")
   public ResponseEntity<Map<String, Object>> registerWalkInPatient(
       Authentication auth, @Valid @RequestBody PatientWalkInRegister req) {
@@ -188,30 +293,31 @@ public class StaffController {
     return ResponseEntity.status(HttpStatus.CREATED).body(resp);
   }
 
-  @GetMapping("/doctors")
-  public List<StaffDoctorView> getDoctors() {
-    Map<UUID, String> deptNames = departments.findAll().stream()
-        .collect(Collectors.toMap(Department::getId, Department::getName, (a, b) -> a));
-    return doctors.findAllByActiveTrueOrderByFullNameAsc().stream()
-        .map(d -> new StaffDoctorView(
-            d.getId(),
-            d.getFullName(),
-            d.getSpecialization(),
-            d.getDepartmentId(),
-            deptNames.getOrDefault(d.getDepartmentId(), "General"),
-            d.getConsultationFee(),
-            d.isActive()
-        ))
-        .toList();
-  }
-
   @PostMapping("/appointments/book")
   public ResponseEntity<AppointmentDtos.View> bookAppointment(
       Authentication auth, @Valid @RequestBody StaffBookAppointment req) {
     UUID actorUserId = UUID.fromString(auth.getName());
+    staffAccessService.checkDoctorAccess(auth, req.doctorId());
+    if (!patients.existsById(req.patientId())) {
+      throw new DomainException(HttpStatus.NOT_FOUND, "PATIENT_NOT_FOUND", "Patient profile not found.");
+    }
     AppointmentDtos.View view = appointmentService.bookForPatient(
         actorUserId, req.patientId(), req.doctorId(), req.startsAt(), req.endsAt());
     return ResponseEntity.status(HttpStatus.CREATED).body(view);
   }
-}
 
+  private StaffPatientView mapPatientView(Patient p) {
+    return new StaffPatientView(
+        p.getId(),
+        p.getPatientNumber(),
+        p.getFullName(),
+        p.getDateOfBirth(),
+        p.getGender(),
+        p.getPhone(),
+        p.getBloodGroup(),
+        p.getEmergencyContact(),
+        p.getAllergies(),
+        p.getMedicalConditions()
+    );
+  }
+}

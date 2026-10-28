@@ -1,6 +1,7 @@
 package com.careflow.hospital.patients;
 
 import com.careflow.hospital.shared.DomainException;
+import com.careflow.hospital.staff.StaffAccessService;
 import java.util.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -15,19 +16,41 @@ public class PatientRecordsController {
 
   private final JdbcTemplate jdbc;
   private final PatientRepository patients;
+  private final StaffAccessService staffAccessService;
 
-  public PatientRecordsController(JdbcTemplate jdbc, PatientRepository patients) {
+  public PatientRecordsController(
+      JdbcTemplate jdbc,
+      PatientRepository patients,
+      StaffAccessService staffAccessService) {
     this.jdbc = jdbc;
     this.patients = patients;
+    this.staffAccessService = staffAccessService;
   }
 
   @GetMapping("/{patientId}/medical-records")
   public List<Map<String, Object>> getMedicalRecords(Authentication auth, @PathVariable UUID patientId) {
     UUID userId = UUID.fromString(auth.getName());
-    boolean isPrivileged = auth.getAuthorities().stream()
-        .anyMatch(a -> Set.of("ROLE_ADMIN", "ROLE_STAFF", "ROLE_DOCTOR").contains(a.getAuthority()));
+    boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    boolean isStaff = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_STAFF"));
+    boolean isDoctor = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"));
 
-    if (!isPrivileged) {
+    if (isAdmin) {
+      // Full administrative access
+    } else if (isStaff) {
+      // Staff-specific patient access check: must be assigned to this patient
+      staffAccessService.checkPatientAccess(auth, patientId);
+    } else if (isDoctor) {
+      Boolean allowed = jdbc.queryForObject(
+          "SELECT EXISTS (" +
+          "  SELECT 1 FROM doctor d " +
+          "  JOIN appointment a ON a.doctor_id = d.doctor_id " +
+          "  WHERE d.user_id = ? AND d.active = true AND a.patient_id = ?" +
+          ")",
+          Boolean.class, userId, patientId);
+      if (!Boolean.TRUE.equals(allowed)) {
+        throw new DomainException(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "Access Denied: Unassigned patient.");
+      }
+    } else {
       Optional<Patient> patientOpt = patients.findByUserId(userId);
       if (patientOpt.isEmpty() || !patientOpt.get().getId().equals(patientId)) {
         throw new DomainException(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "Access Denied");

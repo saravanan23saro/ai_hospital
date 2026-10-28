@@ -224,8 +224,25 @@ public class AppointmentService {
         ? authorities.stream().map(GrantedAuthority::getAuthority).collect(java.util.stream.Collectors.toSet())
         : Set.of();
 
-    if (roles.contains("ROLE_ADMIN") || roles.contains("ROLE_STAFF")) {
+    if (roles.contains("ROLE_ADMIN")) {
       return appointments.findAll(Sort.by(Sort.Direction.DESC, "startsAt")).stream().map(this::view).toList();
+    }
+    if (roles.contains("ROLE_STAFF")) {
+      if (jdbc != null) {
+        List<UUID> deptIds = jdbc.queryForList(
+            "SELECT department_id FROM staff_member WHERE user_id = ? AND active = true AND department_id IS NOT NULL",
+            UUID.class, userId);
+        if (!deptIds.isEmpty()) {
+          UUID deptId = deptIds.getFirst();
+          List<Doctor> docList = doctors.findAllByDepartmentIdAndActiveTrueOrderByFullNameAsc(deptId);
+          if (!docList.isEmpty()) {
+            List<UUID> docIds = docList.stream().map(Doctor::getId).toList();
+            return appointments.findAllByDoctorIdInOrderByStartsAtDesc(docIds).stream().map(this::view).toList();
+          }
+        }
+        return List.of();
+      }
+      return List.of();
     }
     if (roles.contains("ROLE_DOCTOR")) {
       return doctors.findByUserId(userId)
@@ -394,11 +411,24 @@ public class AppointmentService {
     boolean isDoctor = doctors.findByUserId(userId)
         .map(d -> d.getId().equals(a.getDoctorId()))
         .orElse(false);
-    boolean isStaffOrAdmin = users != null && users.findById(userId)
-        .map(u -> u.getRoles().contains("ADMIN") || u.getRoles().contains("STAFF") || u.getRoles().contains("DOCTOR"))
+    boolean isAdmin = users != null && users.findById(userId)
+        .map(u -> u.getRoles().contains("ADMIN"))
         .orElse(false);
-    if (!isPatient && !isDoctor && !isStaffOrAdmin) {
-      if (patients.findByUserId(userId).isPresent()) {
+    boolean isAuthorizedStaff = false;
+    if (!isAdmin && users != null && users.findById(userId).map(u -> u.getRoles().contains("STAFF")).orElse(false)) {
+      if (jdbc != null) {
+        Boolean allowed = jdbc.queryForObject(
+            "SELECT EXISTS (" +
+            "  SELECT 1 FROM staff_member sm " +
+            "  JOIN doctor d ON d.doctor_id = ? " +
+            "  WHERE sm.user_id = ? AND sm.active = true AND sm.department_id = d.department_id" +
+            ")",
+            Boolean.class, a.getDoctorId(), userId);
+        isAuthorizedStaff = Boolean.TRUE.equals(allowed);
+      }
+    }
+    if (!isPatient && !isDoctor && !isAdmin && !isAuthorizedStaff) {
+      if (patients.findByUserId(userId).isPresent() || (users != null && users.findById(userId).map(u -> u.getRoles().contains("STAFF")).orElse(false))) {
         throw new DomainException(HttpStatus.FORBIDDEN, "FORBIDDEN", "You are not authorized to access or modify this appointment.");
       }
       throw notFound("APPOINTMENT_NOT_FOUND", "Appointment was not found.");

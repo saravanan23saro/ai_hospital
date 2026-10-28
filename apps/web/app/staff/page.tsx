@@ -308,6 +308,7 @@ export default function StaffPortal() {
     setError("");
     setNotice("");
     if (tab === "appointments") loadStaffAppointments();
+    else if (tab === "directory") searchPatients(patientSearch);
     else if (tab === "lab") loadLabOrders();
     else if (tab === "billing") loadInvoices();
     else if (tab === "emergency") loadEmergencyCases();
@@ -349,15 +350,14 @@ export default function StaffPortal() {
     }
   }
 
-  // Search Patients
+  // Search Assigned Patients
   async function searchPatients(query: string) {
     setPatientSearch(query);
-    if (!query.trim()) {
-      setPatientResults([]);
-      return;
-    }
     try {
-      const results = await api(`/api/v1/operations/patients/search?query=${encodeURIComponent(query.trim())}`);
+      const path = query.trim()
+        ? `/api/v1/staff/patients?query=${encodeURIComponent(query.trim())}`
+        : "/api/v1/staff/patients";
+      const results = await api(path);
       setPatientResults(Array.isArray(results) ? results : []);
     } catch {
       setPatientResults([]);
@@ -610,6 +610,12 @@ export default function StaffPortal() {
                   <dd>{profile?.departmentName || "General"}</dd>
                 </div>
                 <div>
+                  <dt>Assigned Scope</dt>
+                  <dd style={{ fontWeight: 600, color: "#166534" }}>
+                    {doctorsList.length} Assigned {doctorsList.length === 1 ? "Doctor" : "Doctors"}
+                  </dd>
+                </div>
+                <div>
                   <dt>Account Status</dt>
                   <dd>
                     <span className="status-pill active">
@@ -688,9 +694,9 @@ export default function StaffPortal() {
               <section className="doctor-section">
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
                   <div>
-                    <h2 style={{ margin: 0 }}>Hospital Appointments Schedule</h2>
+                    <h2 style={{ margin: 0 }}>Assigned Appointments Schedule</h2>
                     <p style={{ margin: "0.25rem 0 0", color: "#64748b", fontSize: "0.9rem" }}>
-                      Synchronized live across all patients, attending physicians, and hospital departments.
+                      Showing appointments for doctors assigned to your department ({profile?.departmentName || "General"}).
                     </p>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
@@ -855,44 +861,53 @@ export default function StaffPortal() {
             {/* TAB 3: PATIENT DIRECTORY & QUICK SEARCH */}
             {activeTab === "directory" && (
               <section className="doctor-section">
-                <h2>Hospital Patient Directory</h2>
+                <h2>Assigned Patient Directory</h2>
+                <p style={{ margin: "0.25rem 0 1rem", color: "#64748b", fontSize: "0.9rem" }}>
+                  Showing patients assigned to your department ({profile?.departmentName || "General"}).
+                </p>
                 <div style={{ marginBottom: "1rem" }}>
                   <input
                     type="text"
                     value={patientSearch}
                     onChange={(e) => searchPatients(e.target.value)}
-                    placeholder="Search by patient name, phone number, or patient ID..."
+                    placeholder="Search by assigned patient name, phone number, or patient ID..."
                     style={{ width: "100%", padding: "0.65rem 0.85rem", border: "1px solid #cbd5e1", borderRadius: "8px" }}
                   />
                 </div>
                 <div className="list-grid">
-                  {patientResults.map((p) => (
-                    <article className="card" key={p.patient_id}>
-                      <span className="eyebrow">{p.patient_number}</span>
-                      <h3 style={{ margin: "0.25rem 0" }}>{p.full_name}</h3>
-                      <p style={{ margin: "0.25rem 0", fontSize: "0.9rem", color: "#64748b" }}>
-                        Phone: <strong>{p.phone || "Not provided"}</strong> · Gender: {p.gender || "N/A"}
-                      </p>
-                      {p.date_of_birth && (
-                        <p style={{ margin: 0, fontSize: "0.85rem", color: "#64748b" }}>
-                          DOB: {p.date_of_birth}
+                  {patientResults.map((p) => {
+                    const pid = p.patientId || p.patient_id;
+                    const pnum = p.patientNumber || p.patient_number;
+                    const pname = p.fullName || p.full_name;
+                    const pdob = p.dateOfBirth || p.date_of_birth;
+                    return (
+                      <article className="card" key={pid}>
+                        <span className="eyebrow">{pnum}</span>
+                        <h3 style={{ margin: "0.25rem 0" }}>{pname}</h3>
+                        <p style={{ margin: "0.25rem 0", fontSize: "0.9rem", color: "#64748b" }}>
+                          Phone: <strong>{p.phone || "Not provided"}</strong> · Gender: {p.gender || "N/A"}
                         </p>
-                      )}
-                      <button
-                        type="button"
-                        className="secondary-action"
-                        style={{ marginTop: "0.75rem", fontSize: "0.85rem", width: "100%" }}
-                        onClick={() => openStaffBooking(p.patient_id, p.full_name)}
-                      >
-                        📅 Book Appointment
-                      </button>
-                    </article>
-                  ))}
+                        {pdob && (
+                          <p style={{ margin: 0, fontSize: "0.85rem", color: "#64748b" }}>
+                            DOB: {pdob}
+                          </p>
+                        )}
+                        <button
+                          type="button"
+                          className="secondary-action"
+                          style={{ marginTop: "0.75rem", fontSize: "0.85rem", width: "100%" }}
+                          onClick={() => openStaffBooking(pid, pname)}
+                        >
+                          📅 Book Appointment
+                        </button>
+                      </article>
+                    );
+                  })}
                   {patientSearch && patientResults.length === 0 && (
-                    <p className="empty-result">No patient records found matching "{patientSearch}".</p>
+                    <p className="empty-result">No assigned patient records found matching "{patientSearch}".</p>
                   )}
-                  {!patientSearch && (
-                    <p className="empty-result">Enter a patient name or ID to search hospital records.</p>
+                  {!patientSearch && patientResults.length === 0 && (
+                    <p className="empty-result">No patients currently assigned to your department.</p>
                   )}
                 </div>
               </section>

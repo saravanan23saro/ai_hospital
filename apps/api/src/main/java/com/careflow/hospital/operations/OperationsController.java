@@ -35,8 +35,40 @@ public class OperationsController {
 
   // Patient Search API
   @GetMapping("/patients/search")
-  public List<Map<String, Object>> searchPatients(@RequestParam(value = "query", required = false, defaultValue = "") String query) {
+  public List<Map<String, Object>> searchPatients(
+      Authentication auth,
+      @RequestParam(value = "query", required = false, defaultValue = "") String query) {
     String term = "%" + query.trim().toLowerCase() + "%";
+    if (auth != null && auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_STAFF"))) {
+      UUID staffUserId = user(auth);
+      return jdbc.queryForList(
+        "SELECT DISTINCT p.patient_id, p.patient_number, p.full_name, p.date_of_birth, p.gender, p.phone " +
+        "FROM patient p " +
+        "JOIN staff_member sm ON sm.user_id = ? AND sm.active = true " +
+        "WHERE (" +
+        "  (sm.department_id IS NOT NULL AND (" +
+        "    EXISTS (SELECT 1 FROM appointment a JOIN doctor d ON a.doctor_id = d.doctor_id WHERE a.patient_id = p.patient_id AND d.department_id = sm.department_id) " +
+        "    OR EXISTS (SELECT 1 FROM emergency_case e WHERE e.patient_id = p.patient_id AND e.department_id = sm.department_id)" +
+        "  )) " +
+        "  OR EXISTS (SELECT 1 FROM emergency_case e WHERE e.patient_id = p.patient_id AND e.opened_by = ?)" +
+        ") AND (" +
+        "  LOWER(p.full_name) LIKE ? OR LOWER(p.patient_number) LIKE ? OR p.phone LIKE ?" +
+        ") ORDER BY p.full_name LIMIT 20",
+        staffUserId, staffUserId, term, term, term
+      );
+    }
+    if (auth != null && auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"))) {
+      UUID docUserId = user(auth);
+      return jdbc.queryForList(
+        "SELECT DISTINCT p.patient_id, p.patient_number, p.full_name, p.date_of_birth, p.gender, p.phone " +
+        "FROM patient p " +
+        "JOIN doctor d ON d.user_id = ? AND d.active = true " +
+        "JOIN appointment a ON a.doctor_id = d.doctor_id AND a.patient_id = p.patient_id " +
+        "WHERE LOWER(p.full_name) LIKE ? OR LOWER(p.patient_number) LIKE ? OR p.phone LIKE ? " +
+        "ORDER BY p.full_name LIMIT 20",
+        docUserId, term, term, term
+      );
+    }
     return jdbc.queryForList(
       "select patient_id, patient_number, full_name, date_of_birth, gender, phone from patient where lower(full_name) like ? or lower(patient_number) like ? or phone like ? order by full_name limit 20",
       term, term, term
@@ -120,7 +152,11 @@ public class OperationsController {
       params.add(term);
     }
 
-    if (!privileged(auth)) {
+    if (auth != null && auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_STAFF"))) {
+      sql.append("and (e.opened_by=? or exists (select 1 from staff_member sm where sm.user_id=? and sm.active=true and (sm.department_id is null or sm.department_id = e.department_id))) ");
+      params.add(user(auth));
+      params.add(user(auth));
+    } else if (!privileged(auth)) {
       sql.append("and (e.opened_by=? or exists (select 1 from doctor doc join appointment a on a.doctor_id=doc.doctor_id where doc.user_id=? and doc.active=true and a.patient_id=e.patient_id)) ");
       params.add(user(auth));
       params.add(user(auth));
@@ -254,7 +290,10 @@ public class OperationsController {
       params.add(term);
     }
 
-    if (!privileged(auth)) {
+    if (auth != null && auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_STAFF"))) {
+      sql.append("and exists (select 1 from staff_member sm where sm.user_id=? and sm.active=true and (sm.department_id is null or exists (select 1 from appointment a join doctor d on a.doctor_id=d.doctor_id where a.patient_id=l.patient_id and d.department_id=sm.department_id))) ");
+      params.add(user(auth));
+    } else if (!privileged(auth)) {
       sql.append("and exists (select 1 from doctor d join appointment a on a.doctor_id=d.doctor_id where d.user_id=? and d.active=true and a.patient_id=l.patient_id) ");
       params.add(user(auth));
     }
@@ -434,13 +473,34 @@ public class OperationsController {
   }
 
   private void requirePatientAccess(Authentication auth, UUID patientId) {
-    if (privileged(auth)) return;
+    if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+      return;
+    }
+    if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_STAFF"))) {
+      UUID staffUserId = user(auth);
+      Boolean allowed = jdbc.queryForObject(
+          "SELECT EXISTS (" +
+          "  SELECT 1 FROM staff_member sm " +
+          "  WHERE sm.user_id = ? AND sm.active = true AND (" +
+          "    (sm.department_id IS NOT NULL AND (" +
+          "      EXISTS (SELECT 1 FROM appointment a JOIN doctor d ON a.doctor_id = d.doctor_id WHERE a.patient_id = ? AND d.department_id = sm.department_id) " +
+          "      OR EXISTS (SELECT 1 FROM emergency_case e WHERE e.patient_id = ? AND e.department_id = sm.department_id)" +
+          "    )) " +
+          "    OR EXISTS (SELECT 1 FROM emergency_case e WHERE e.patient_id = ? AND e.opened_by = ?)" +
+          "  )" +
+          ")",
+          Boolean.class, staffUserId, patientId, patientId, patientId, staffUserId);
+      if (!Boolean.TRUE.equals(allowed)) {
+        throw new DomainException(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "You are not authorized to access details for this patient.");
+      }
+      return;
+    }
     Boolean allowed = jdbc.queryForObject("select exists(select 1 from doctor d join appointment a on a.doctor_id=d.doctor_id where d.user_id=? and d.active=true and a.patient_id=?)", Boolean.class, user(auth), patientId);
-    if (!Boolean.TRUE.equals(allowed)) throw notFound();
+    if (!Boolean.TRUE.equals(allowed)) throw new DomainException(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "You are not authorized to access details for this patient.");
   }
 
   private boolean privileged(Authentication auth) {
-    return auth.getAuthorities().stream().anyMatch(a -> Set.of("ROLE_ADMIN", "ROLE_STAFF").contains(a.getAuthority()));
+    return auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
   }
 
   private UUID patientFor(String sql, UUID id) {

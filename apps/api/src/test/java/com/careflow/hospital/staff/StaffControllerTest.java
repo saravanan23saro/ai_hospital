@@ -36,6 +36,7 @@ class StaffControllerTest {
   private DoctorRepository doctors;
   private AppointmentService appointmentService;
   private PasswordEncoder passwordEncoder;
+  private StaffAccessService staffAccessService;
   private StaffController controller;
 
   @BeforeEach
@@ -47,10 +48,11 @@ class StaffControllerTest {
     doctors = mock(DoctorRepository.class);
     appointmentService = mock(AppointmentService.class);
     passwordEncoder = mock(PasswordEncoder.class);
+    staffAccessService = mock(StaffAccessService.class);
     when(passwordEncoder.encode(anyString())).thenReturn("hashed-pwd");
 
     controller = new StaffController(
-        staffMembers, users, departments, patients, doctors, appointmentService, passwordEncoder);
+        staffMembers, users, departments, patients, doctors, appointmentService, passwordEncoder, staffAccessService);
   }
 
   @Test
@@ -146,8 +148,17 @@ class StaffControllerTest {
   }
 
   @Test
-  void getDoctorsReturnsActiveDoctorsWithDepartmentNames() {
+  void getDoctorsReturnsAssignedDoctorsForStaffMember() {
+    UUID staffUserId = UUID.randomUUID();
     UUID deptId = UUID.randomUUID();
+    Authentication auth = new UsernamePasswordAuthenticationToken(
+        staffUserId.toString(), "", List.of(new SimpleGrantedAuthority("ROLE_STAFF")));
+
+    StaffMember staff = new StaffMember(
+        staffUserId, "STF-CARD01", "Nurse Kelly", "9876543210", "FEMALE",
+        LocalDate.of(1992, 1, 1), deptId, "NURSE", "Cardiac Care Nurse", LocalDate.now());
+    when(staffAccessService.getStaffMember(staffUserId)).thenReturn(staff);
+
     Department dept = mock(Department.class);
     when(dept.getId()).thenReturn(deptId);
     when(dept.getName()).thenReturn("Cardiology");
@@ -156,9 +167,9 @@ class StaffControllerTest {
     Doctor doc = new Doctor(
         UUID.randomUUID(), "Dr. Rao", "Cardiology", deptId, "LIC-12345", 10,
         "9876543210", "MALE", LocalDate.of(1980, 5, 10), 60000L);
-    when(doctors.findAllByActiveTrueOrderByFullNameAsc()).thenReturn(List.of(doc));
+    when(staffAccessService.getAssignedDoctors(staff)).thenReturn(List.of(doc));
 
-    List<StaffController.StaffDoctorView> list = controller.getDoctors();
+    List<StaffController.StaffDoctorView> list = controller.getDoctors(auth);
 
     assertEquals(1, list.size());
     assertEquals("Dr. Rao", list.getFirst().fullName());
@@ -168,7 +179,56 @@ class StaffControllerTest {
   }
 
   @Test
-  void bookAppointmentCallsAppointmentService() {
+  void getDoctorDetailsEnforcesStaffAccess() {
+    UUID staffUserId = UUID.randomUUID();
+    UUID doctorId = UUID.randomUUID();
+    Authentication auth = new UsernamePasswordAuthenticationToken(
+        staffUserId.toString(), "", List.of(new SimpleGrantedAuthority("ROLE_STAFF")));
+
+    // When authorized
+    Doctor doc = new Doctor(
+        doctorId, "Dr. Assigned", "Pediatrics", UUID.randomUUID(), "LIC-999", 5,
+        "9876543211", "FEMALE", LocalDate.of(1985, 4, 12), 50000L);
+    when(doctors.findById(doctorId)).thenReturn(Optional.of(doc));
+
+    StaffController.StaffDoctorView view = controller.getDoctor(auth, doctorId);
+    assertEquals("Dr. Assigned", view.fullName());
+    verify(staffAccessService).checkDoctorAccess(auth, doctorId);
+
+    // When unauthorized
+    UUID unassignedDoctorId = UUID.randomUUID();
+    doThrow(new DomainException(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "Forbidden"))
+        .when(staffAccessService).checkDoctorAccess(auth, unassignedDoctorId);
+
+    DomainException ex = assertThrows(DomainException.class, () -> controller.getDoctor(auth, unassignedDoctorId));
+    assertEquals(HttpStatus.FORBIDDEN, ex.status());
+  }
+
+  @Test
+  void getPatientDetailsEnforcesStaffAccess() {
+    UUID staffUserId = UUID.randomUUID();
+    UUID patientId = UUID.randomUUID();
+    Authentication auth = new UsernamePasswordAuthenticationToken(
+        staffUserId.toString(), "", List.of(new SimpleGrantedAuthority("ROLE_STAFF")));
+
+    Patient patient = new Patient(patientId, UUID.randomUUID(), "PAT-123456", "John Doe");
+    when(patients.findById(patientId)).thenReturn(Optional.of(patient));
+
+    StaffController.StaffPatientView view = controller.getPatient(auth, patientId);
+    assertEquals("John Doe", view.fullName());
+    verify(staffAccessService).checkPatientAccess(auth, patientId);
+
+    // When unauthorized
+    UUID unassignedPatientId = UUID.randomUUID();
+    doThrow(new DomainException(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "Forbidden"))
+        .when(staffAccessService).checkPatientAccess(auth, unassignedPatientId);
+
+    DomainException ex = assertThrows(DomainException.class, () -> controller.getPatient(auth, unassignedPatientId));
+    assertEquals(HttpStatus.FORBIDDEN, ex.status());
+  }
+
+  @Test
+  void bookAppointmentCallsAppointmentServiceAfterVerifyingAccess() {
     UUID staffUserId = UUID.randomUUID();
     UUID patientId = UUID.randomUUID();
     UUID doctorId = UUID.randomUUID();
@@ -182,6 +242,7 @@ class StaffControllerTest {
         UUID.randomUUID(), "APT-123456", patientId, doctorId, "Dr. Rao", "Cardiology",
         startsAt, endsAt, "CONFIRMED", null, null, null);
 
+    when(patients.existsById(patientId)).thenReturn(true);
     when(appointmentService.bookForPatient(staffUserId, patientId, doctorId, startsAt, endsAt))
         .thenReturn(expectedView);
 
@@ -192,6 +253,8 @@ class StaffControllerTest {
 
     assertEquals(HttpStatus.CREATED, resp.getStatusCode());
     assertEquals(expectedView, resp.getBody());
+    verify(staffAccessService).checkDoctorAccess(auth, doctorId);
+    verify(patients).existsById(patientId);
     verify(appointmentService).bookForPatient(staffUserId, patientId, doctorId, startsAt, endsAt);
   }
 }
