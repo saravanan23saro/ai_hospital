@@ -19,7 +19,7 @@ import {
   Shield,
 } from "lucide-react";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8180";
+import { API } from "../lib/api";
 
 type UserIdentity = {
   userId?: string;

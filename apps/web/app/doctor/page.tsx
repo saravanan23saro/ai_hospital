@@ -7,7 +7,7 @@ import AppHeader from "../components/Header";
 import { useLanguage } from "../lib/i18n";
 import BackButton from "../components/BackButton";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8180";
+import { API } from "../lib/api";
 
 type Me = { userId?: string; email: string; roles: string[] };
 type Department = { departmentId: string; name: string };

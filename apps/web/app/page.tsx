@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { saveSession } from "./lib/session";
 import { Language, useLanguage } from "./lib/i18n";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8180";
+import { API } from "./lib/api";
 type AccessChoice = "patient" | "staff" | "patient-register" | "staff-register";
 type UserRole = "patient" | "doctor" | "staff" | "admin";
 

@@ -7,7 +7,7 @@ import { loadSession, sessionFetch } from "../../../lib/session";
 import AppHeader from "../../../components/Header";
 import BackButton from "../../../components/BackButton";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8180";
+import { API } from "../../../lib/api";
 
 type Medicine = {
   medicineName: string;

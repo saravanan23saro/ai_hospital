@@ -39,7 +39,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8180";
+import { API } from "../lib/api";
 
 type Session = { accessToken: string; refreshToken: string };
 type Department = { departmentId: string; name: string };
