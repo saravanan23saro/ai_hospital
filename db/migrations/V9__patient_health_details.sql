@@ -1,2 +1,3 @@
--- Canonical source is mirrored in apps/api/src/main/resources/db/migration/V9__patient_health_details.sql.
--- It adds blood group, allergies, and medical-condition details to patient profiles.
+ALTER TABLE patient ADD COLUMN blood_group varchar(20);
+ALTER TABLE patient ADD COLUMN allergies text;
+ALTER TABLE patient ADD COLUMN medical_conditions text;

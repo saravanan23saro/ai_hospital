@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export type Language = "en" | "ta" | "hi" | "es";
+export type Language = "en" | "ta" | "hi";
 
 export const translations: Record<Language, Record<string, string>> = {
   en: {
@@ -49,29 +49,96 @@ export const translations: Record<Language, Record<string, string>> = {
     heroSubTextDesc: "Your trusted partner in modern healthcare management. Streamlining appointments, consultations, and hospital operations for better patient outcomes.",
 
     // Hero Section
+    goodHealthTag: "GOOD HEALTH, BRIGHTER TOMORROW",
     yourCare: "Your care,",
     organized: "organized.",
-    heroSubtext: "Welcome back, {name}! Manage your health, appointments, and payments all in one secure place.",
-    personalHealth: "Personal Health",
-    viewUpcomingVisits: "View upcoming visits",
-    viewYourPrescriptions: "View your prescriptions",
-    viewInvoicesPayments: "View invoices & payments",
-
-    // Cards
-    welcome: "Welcome",
-    welcomeDesc: "Complete your profile, find an available doctor, confirm an appointment, and process consultation payments.",
-    healthDataSafe: "Your health data is safe with us",
+    welcomeUser: "Welcome back, {name}!",
+    stayOnTopDesc: "Stay on top of your appointments, prescriptions, health records and payments — all in one secure place.",
+    smallSteps: "Small Steps Healthier You ♡",
+    healthDataSafeTitle: "Your health data is safe with us",
     healthDataSafeDesc: "We use industry-standard security to protect your personal information.",
-    nextSteps: "Next steps",
-    nextStepsDesc: "Take the next steps to manage your health journey efficiently.",
-    completeProfile: "Complete profile",
-    addPersonalDetails: "Add your personal details",
-    findSlot: "Find a slot",
-    bookAnAppointment: "Book an appointment",
-    viewPayments: "View Payments",
-    checkInvoicesHistory: "Check invoices & payment history",
-    goToMainDashboard: "Go to Main Dashboard",
-    mainDashboardDesc: "Access the main portal dashboard to manage all hospital operations.",
+    learnMore: "Learn more →",
+
+    // Health Awareness & Special Days
+    healthAwarenessSectionTitle: "Health Awareness & Special Days",
+    worldHeartDayTitle: "World Heart Day",
+    worldHeartDaySub: "A healthier heart leads to a brighter tomorrow.",
+    worldHeartDayDesc: "Take care of your heart with regular checkups, a balanced diet, and an active lifestyle.",
+    healthyHeartsBadge: "Healthy Hearts Happier Lives",
+
+    worldDiabetesDayTitle: "World Diabetes Day",
+    worldDiabetesDaySub: "Know your risk, protect your future.",
+    worldDiabetesDayDesc: "Monitor your blood sugar levels regularly, maintain a healthy diet, and stay physically active.",
+    beatDiabetesBadge: "Beat Diabetes Together",
+
+    worldMentalHealthDayTitle: "World Mental Health Day",
+    worldMentalHealthDaySub: "Mental health is a universal human right.",
+    worldMentalHealthDayDesc: "Prioritize rest, connect with loved ones, practice mindfulness, and seek guidance when needed.",
+    mindMattersBadge: "Mind Matters Every Day",
+
+    worldHealthDayTitle: "World Health Day",
+    worldHealthDaySub: "My health, my right.",
+    worldHealthDayDesc: "Empower your life with preventative health checkups, proper hydration, and routine wellness tracking.",
+    healthForAllBadge: "Health For All",
+
+    // Quick Health Tips
+    quickHealthTips: "Quick Health Tips",
+    regularCheckups: "Regular Checkups",
+    keepHeartHealthy: "Keep your heart healthy",
+    balancedDiet: "Balanced Diet",
+    chooseNutritious: "Choose nutritious foods",
+    stayActive: "Stay Active",
+    moveForHealth: "Move for a healthier you",
+    bloodGlucoseTest: "Blood Glucose Test",
+    regularScreening: "Regular screening",
+    lowGlycemicMeals: "Low Glycemic Meals",
+    nutritiousChoices: "Nutritious choices",
+    dailyExercise: "Daily Exercise",
+    movementMins: "30 mins of movement",
+    mindfulnessPractice: "Mindfulness Practice",
+    dailyMeditation: "Daily meditation",
+    restfulSleep: "Restful Sleep",
+    hoursNightly: "7-8 hours nightly",
+    talkConnect: "Talk & Connect",
+    supportNetwork: "Support network",
+    annualScreening: "Annual Screening",
+    comprehensiveCare: "Comprehensive care",
+    hydrationFirst: "Hydration First",
+    litersDaily: "2-3 Liters daily",
+    wellnessTracking: "Wellness Tracking",
+    monitorVitals: "Monitor vitals",
+
+    // Care Journey Timeline
+    careJourneyTitle: "Your Care Journey Timeline",
+    stepProfileSetup: "Profile Setup",
+    stepSlotSelection: "Slot Selection",
+    stepDoctorConsultation: "Doctor Consultation",
+    stepDigitalPrescription: "Digital Prescription",
+    stepPaymentReceipt: "Payment & Receipt",
+    statusCompleted: "Completed",
+    statusConfirmed: "Confirmed",
+    statusPending: "Pending",
+    statusCancelled: "Cancelled",
+
+    // Dashboard 3 Cards
+    upcomingAppointments: "Upcoming Appointments",
+    viewAll: "View all →",
+    nextVisit: "Next Visit",
+    noUpcomingVisits: "No upcoming visits scheduled",
+    noUpcomingAppointmentsTitle: "No Scheduled Appointments",
+    noUpcomingAppointmentsSub: "You currently have no scheduled doctor visits.",
+    bookNewAppointmentBtn: "Book Appointment",
+    noPrescriptionsYetShort: "No active prescriptions",
+    noHealthRecordsYet: "No health records uploaded yet",
+    addToCalendar: "+ Add to Calendar",
+    activePrescriptionsHeading: "My Prescriptions",
+    activePrescriptionsLabel: "Active prescriptions",
+    lastUpdated: "Last updated",
+    viewPrescriptionsBtn: "View Prescriptions →",
+    healthRecordsHeading: "Health Records",
+    digitalConsultationNotes: "Digital consultation notes",
+    verifiedByHospital: "Verified by hospital staff",
+    viewRecordsBtn: "View Records →",
 
     // Settings
     accountPortalSettings: "Account & Portal Settings",
@@ -136,6 +203,7 @@ export const translations: Record<Language, Record<string, string>> = {
     payNow: "💳 Pay Now (₹1,000)",
     cancelAppointment: "Cancel appointment",
     noAppointmentsYet: "No appointments yet.",
+    reason: "Reason:",
 
     // Sub-views: Payments
     paymentsAndReceiptsTitle: "Payments & Receipts",
@@ -173,6 +241,42 @@ export const translations: Record<Language, Record<string, string>> = {
     backToStaffPortal: "Back to Staff Portal",
     backHome: "Back Home",
 
+    // Admin Management
+    adminSectionTitle: "ADMINISTRATION",
+    doctorsManagement: "Doctors",
+    staffManagement: "Staff",
+    userManagement: "User Management",
+    registerDoctor: "Register Doctor",
+    registerStaff: "Register Staff",
+    personalInformation: "Personal Information",
+    professionalInformation: "Professional Information",
+    employmentInformation: "Employment Information",
+    accountInformation: "Account Information",
+    staffType: "Staff Type",
+    designation: "Designation",
+    employeeId: "Employee ID",
+    consultationFee: "Consultation Fee",
+    activate: "Activate",
+    deactivate: "Deactivate",
+    delete: "Delete",
+    activeStatus: "Active",
+    deactivatedStatus: "Deactivated",
+    actions: "Actions",
+    resetPassword: "Reset Password",
+    confirmDeactivatePrompt: "Are you sure you want to deactivate this account? Login and access will be disabled.",
+    doctorsManagementSubtitle: "Register new medical doctors, view profiles, and control account status.",
+    staffManagementSubtitle: "Register and manage nursing, administrative, and clinical operational staff.",
+    userManagementSubtitle: "System-wide user identity accounts, RBAC role permissions, and password controls.",
+    emergencyTitle: "Emergency Management",
+    emergencySubtitle: "Monitor and manage emergency cases, triage, beds and patient flow.",
+    openEmergencyCase: "Open Emergency Case",
+    labTitle: "Laboratory Management",
+    labSubtitle: "Manage laboratory orders, samples, results and reports.",
+    newLabOrder: "New Lab Order",
+    billingTitle: "Billing & Payments",
+    billingSubtitle: "Manage invoices, charges, payments and receipts.",
+    createInvoice: "Create Invoice",
+
     // Footer
     allRightsReserved: "© 2026 CareFlow AI. All rights reserved.",
     hipaaCompliant: "HIPAA Compliant",
@@ -181,7 +285,7 @@ export const translations: Record<Language, Record<string, string>> = {
   },
   ta: {
     // Brand & Header
-    brandTitle: "கேர்ஃப்ளோ AI",
+    brandTitle: "CareFlow AI",
     brandSubtitle: "ஸ்மார்ட் மருத்துவமனை நிர்வாகம்",
     searchPlaceholder: "சந்திப்புகள், மருத்துவர்கள், இன்வாய்ஸ்களைத் தேடுங்கள்...",
     patientCare: "நோயாளி பராமரிப்பு",
@@ -200,7 +304,7 @@ export const translations: Record<Language, Record<string, string>> = {
     language: "மொழி",
 
     // Login & Register Pages
-    signInTitle: "உங்கள் கணக்கில் புகுபதியவும்",
+    signInTitle: "உங்கள் கணக்கில் உள்நுழையவும்",
     registerTitle: "உங்கள் கணக்கை உருவாக்கவும்",
     signInSub: "உங்கள் டாஷ்போர்டை அணுகி சுகாதார சேவைகளை நிர்வகிக்கவும்.",
     registerSub: "உங்கள் கணக்கைப் பதிவு செய்ய கீழே உங்கள் விவரங்களை நிரப்பவும்.",
@@ -223,29 +327,96 @@ export const translations: Record<Language, Record<string, string>> = {
     heroSubTextDesc: "நவீன சுகாதார நிர்வாகத்தில் உங்கள் நம்பிக்கைக்குரிய கூட்டாளி. நோயாளி விளைவுகளை மேம்படுத்த சந்திப்புகள் மற்றும் செயல்பாடுகளை எளிமையாக்குகிறது.",
 
     // Hero Section
+    goodHealthTag: "நல்ல ஆரோக்கியம், பிரகாசமான நாளை",
     yourCare: "உங்கள் பராமரிப்பு,",
     organized: "சீராக்கப்பட்டது.",
-    heroSubtext: "மீண்டும் வருக, {name}! உங்கள் ஆரோக்கியம், சந்திப்புகள் மற்றும் கட்டணங்களை ஒரே பாதுகாப்பான இடத்தில் நிர்வகிக்கவும்.",
-    personalHealth: "தனிப்பட்ட ஆரோக்கியம்",
-    viewUpcomingVisits: "வரவிருக்கும் வருகைகளைக் காண்க",
-    viewYourPrescriptions: "உங்கள் மருந்துச் சீட்டுகளைக் காண்க",
-    viewInvoicesPayments: "இன்வாய்ஸ்கள் & கட்டணங்களைக் காண்க",
-
-    // Cards
-    welcome: "வரவேற்கிறோம்",
-    welcomeDesc: "உங்கள் சுயவிவரத்தைப் பூர்த்தி செய்து, கிடைக்கக்கூடிய மருத்துவரைத் தேர்ந்தெடுத்து சந்திப்பை உறுதிசெய்யவும்.",
-    healthDataSafe: "உங்கள் சுகாதாரத் தரவு எங்களுடன் பாதுகாப்பாக உள்ளது",
+    welcomeUser: "மீண்டும் வருக, {name}!",
+    stayOnTopDesc: "உங்கள் சந்திப்புகள், மருந்துச் சீட்டுகள், சுகாதாரப் பதிவுகள் மற்றும் கட்டணங்களை ஒரே பாதுகாப்பான இடத்தில் நிர்வகிக்கவும்.",
+    smallSteps: "சிறிய படிகள் ஆரோக்கியமான நீங்கள் ♡",
+    healthDataSafeTitle: "உங்கள் சுகாதாரத் தரவு எங்களுடன் பாதுகாப்பாக உள்ளது",
     healthDataSafeDesc: "உங்கள் தனிப்பட்ட தகவலைப் பாதுகாக்க தொழில்துறை தரநிலை பாதுகாப்பைப் பயன்படுத்துகிறோம்.",
-    nextSteps: "அடுத்த கட்டங்கள்",
-    nextStepsDesc: "உங்கள் சுகாதாரப் பயணத்தை திறம்பட நிர்வகிக்க அடுத்த படிகளை எடுக்கவும்.",
-    completeProfile: "சுயவிவரத்தைப் பூர்த்தி செய்",
-    addPersonalDetails: "உங்கள் தனிப்பட்ட விவரங்களைச் சேர்க்கவும்",
-    findSlot: "நேரத்தைத் தேர்ந்தெடு",
-    bookAnAppointment: "மருத்துவர் சந்திப்பைப் பதிவு செய்",
-    viewPayments: "கட்டணங்களைப் பார்",
-    checkInvoicesHistory: "இன்வாய்ஸ்கள் & கட்டண வரலாற்றைச் சரிபார்",
-    goToMainDashboard: "முதன்மை டாஷ்போர்டிற்குச் செல்",
-    mainDashboardDesc: "அனைத்து மருத்துவமனை செயல்பாடுகளையும் நிர்வகிக்க முதன்மை போர்டல் டாஷ்போர்டை அணுகவும்.",
+    learnMore: "மேலும் அறிய →",
+
+    // Health Awareness & Special Days
+    healthAwarenessSectionTitle: "சுகாதார விழிப்புணர்வு & சிறப்பு நாட்கள்",
+    worldHeartDayTitle: "உலக இதய தினம்",
+    worldHeartDaySub: "ஆரோக்கியமான இதயம் பிரகாசமான நாளைக்கு வழிவகுக்கும்.",
+    worldHeartDayDesc: "வழக்கமான சோதனைகள், சீரான உணவு மற்றும் சுறுசுறுப்பான வாழ்க்கை முறையுடன் உங்கள் இதயத்தைப் பராமரியுங்கள்.",
+    healthyHeartsBadge: "ஆரோக்கியமான இதயம் மகிழ்ச்சியான வாழ்க்கை",
+
+    worldDiabetesDayTitle: "உலக நீரிழிவு தினம்",
+    worldDiabetesDaySub: "உங்கள் ஆபத்தை அறிந்து கொள்ளுங்கள், உங்கள் எதிர்காலத்தைப் பாதுகாக்கவும்.",
+    worldDiabetesDayDesc: "உங்கள் இரத்த சர்க்கரை அளவைத் தவறாமல் கண்காணிக்கவும், ஆரோக்கியமான உணவைப் பராமரிக்கவும், சுறுசுறுப்பாக இருக்கவும்.",
+    beatDiabetesBadge: "நீரிழிவை ஒன்றுபட்டு வெல்வோம்",
+
+    worldMentalHealthDayTitle: "உலக மனநல தினம்",
+    worldMentalHealthDaySub: "மனநலம் என்பது உலகளாவிய மனித உரிமை.",
+    worldMentalHealthDayDesc: "ஓய்வுக்கு முன்னுரிமை கொடுங்கள், அன்பானவர்களுடன் இணையுங்கள், மன அமைதி பயிற்சி செய்யுங்கள்.",
+    mindMattersBadge: "மனநலம் தினமும் முக்கியம்",
+
+    worldHealthDayTitle: "உலக சுகாதார தினம்",
+    worldHealthDaySub: "என் ஆரோக்கியம், என் உரிமை.",
+    worldHealthDayDesc: "தடுப்பு சுகாதார சோதனைகள், சரியான நீரேற்றம் மற்றும் வழக்கமான ஆரோக்கிய கண்காணிப்புடன் உங்கள் வாழ்க்கையை மேம்படுத்துங்கள்.",
+    healthForAllBadge: "அனைவருக்கும் ஆரோக்கியம்",
+
+    // Quick Health Tips
+    quickHealthTips: "விரைவான சுகாதார குறிப்புகள்",
+    regularCheckups: "வழக்கமான பரிசோதனைகள்",
+    keepHeartHealthy: "உங்கள் இதயத்தை ஆரோக்கியமாக வைத்திருங்கள்",
+    balancedDiet: "சீரான உணவு",
+    chooseNutritious: "சத்தான உணவுகளைத் தேர்ந்தெடுக்கவும்",
+    stayActive: "சுறுசுறுப்பாக இருங்கள்",
+    moveForHealth: "ஆரோக்கியமான வாழ்க்கைக்கு உடற்பயிற்சி செய்யுங்கள்",
+    bloodGlucoseTest: "இரத்த குளுக்கோஸ் சோதனை",
+    regularScreening: "வழக்கமான பரிசோதனை",
+    lowGlycemicMeals: "குறைந்த சர்க்கரை உணவுகள்",
+    nutritiousChoices: "சத்தான தேர்வுகள்",
+    dailyExercise: "தினசரி உடற்பயிற்சி",
+    movementMins: "30 நிமிட உடற்பயிற்சி",
+    mindfulnessPractice: "மன அமைதி பயிற்சி",
+    dailyMeditation: "தினசரி தியானம்",
+    restfulSleep: "நிம்மதியான தூக்கம்",
+    hoursNightly: "இரவில் 7-8 மணிநேரம்",
+    talkConnect: "பேசி இணையுங்கள்",
+    supportNetwork: "ஆதரவு பிணையம்",
+    annualScreening: "ஆண்டுதோறும் பரிசோதனை",
+    comprehensiveCare: "முழுமையான பராமரிப்பு",
+    hydrationFirst: "சரியான நீரேற்றம்",
+    litersDaily: "தினமும் 2-3 லிட்டர்",
+    wellnessTracking: "ஆரோக்கிய கண்காணிப்பு",
+    monitorVitals: "முக்கிய அளவீடுகளைக் கண்காணிக்கவும்",
+
+    // Care Journey Timeline
+    careJourneyTitle: "உங்கள் பராமரிப்பு பயணக் காலக்கோடு",
+    stepProfileSetup: "சுயவிவர அமைவு",
+    stepSlotSelection: "நேரத் தேர்வு",
+    stepDoctorConsultation: "மருத்துவர் கலந்தாய்வு",
+    stepDigitalPrescription: "டிஜிட்டல் மருந்துச்சீட்டு",
+    stepPaymentReceipt: "கட்டணம் & ரசீது",
+    statusCompleted: "நிறைவுற்றது",
+    statusConfirmed: "உறுதிசெய்யப்பட்டது",
+    statusPending: "நிலுவையில் உள்ளது",
+    statusCancelled: "ரத்துசெய்யப்பட்டது",
+
+    // Dashboard 3 Cards
+    upcomingAppointments: "வரவிருக்கும் சந்திப்புகள்",
+    viewAll: "அனைத்தையும் காண்க →",
+    nextVisit: "அடுத்த வருகை",
+    noUpcomingVisits: "வரவிருக்கும் சந்திப்புகள் எதுவும் திட்டமிடப்படவில்லை",
+    noUpcomingAppointmentsTitle: "திட்டமிடப்பட்ட சந்திப்புகள் எதுவுமில்லை",
+    noUpcomingAppointmentsSub: "தற்போது உங்களுக்கு திட்டமிடப்பட்ட மருத்துவர் சந்திப்புகள் எதுவுமில்லை.",
+    bookNewAppointmentBtn: "சந்திப்பை முன்பதிவு செய்க",
+    noPrescriptionsYetShort: "செயலில் உள்ள மருந்துச் சீட்டுகள் இல்லை",
+    noHealthRecordsYet: "சுகாதாரப் பதிவுகள் எதுவும் இதுவரை பதிவேற்றப்படவில்லை",
+    addToCalendar: "+ காலண்டரில் சேர்",
+    activePrescriptionsHeading: "என் மருந்துச் சீட்டுகள்",
+    activePrescriptionsLabel: "செயலில் உள்ள மருந்துச் சீட்டுகள்",
+    lastUpdated: "கடைசியாக புதுப்பிக்கப்பட்டது",
+    viewPrescriptionsBtn: "மருந்துச் சீட்டுகளைக் காண்க →",
+    healthRecordsHeading: "சுகாதார பதிவுகள்",
+    digitalConsultationNotes: "டிஜிட்டல் கலந்தாய்வு குறிப்புகள்",
+    verifiedByHospital: "மருத்துவமனை ஊழியர்களால் சரிபார்க்கப்பட்டது",
+    viewRecordsBtn: "பதிவுகளைக் காண்க →",
 
     // Settings
     accountPortalSettings: "கணக்கு & போர்டல் அமைப்புகள்",
@@ -310,6 +481,7 @@ export const translations: Record<Language, Record<string, string>> = {
     payNow: "💳 இப்போது செலுத்துங்கள் (₹1,000)",
     cancelAppointment: "சந்திப்பை ரத்து செய்",
     noAppointmentsYet: "இன்னும் சந்திப்புகள் எதுவும் இல்லை.",
+    reason: "காரணம்:",
 
     // Sub-views: Payments
     paymentsAndReceiptsTitle: "கட்டணங்கள் மற்றும் இன்வாய்ஸ்கள்",
@@ -325,7 +497,7 @@ export const translations: Record<Language, Record<string, string>> = {
     issuedOn: "வழங்கப்பட்ட தேதி:",
     prescribedMedicines: "பரிந்துரைக்கப்பட்ட மருந்துகள்:",
     viewPrescriptionDetails: "மருந்துச் சீட்டு விவரங்களைப் பார்",
-    downloadDocument: "📥 ஆவணத்தைப் பதிவிறக்கவும்",
+    downloadDocument: "ஆவணத்தைப் பதிவிறக்கவும்",
     noPrescriptionsYet: "இன்னும் மருந்துச் சீட்டுகள் எதுவும் வழங்கப்படவில்லை.",
 
     // Staff & Operations
@@ -347,15 +519,51 @@ export const translations: Record<Language, Record<string, string>> = {
     backToStaffPortal: "பணியாளர் போர்ட்டலுக்குத் திரும்பு",
     backHome: "முகப்பிற்குத் திரும்பு",
 
+    // Admin Management
+    adminSectionTitle: "நிர்வாகம்",
+    doctorsManagement: "மருத்துவர்கள்",
+    staffManagement: "பணியாளர்கள்",
+    userManagement: "பயனர் நிர்வாகம்",
+    registerDoctor: "மருத்துவரை பதிவு செய்க",
+    registerStaff: "பணியாளரை பதிவு செய்க",
+    personalInformation: "தனிப்பட்ட தகவல்கள்",
+    professionalInformation: "தொழில்முறை தகவல்கள்",
+    employmentInformation: "வேலைவாய்ப்பு தகவல்கள்",
+    accountInformation: "கணக்கு தகவல்கள்",
+    staffType: "பணியாளர் வகை",
+    designation: "பதவி",
+    employeeId: "ஊழியர் ஐடி",
+    consultationFee: "கலந்தாய்வு கட்டணம்",
+    activate: "செயல்படுத்து",
+    deactivate: "செயலிழக்கச் செய்",
+    delete: "நீக்கு",
+    activeStatus: "செயலில்",
+    deactivatedStatus: "செயலிழக்கப்பட்டது",
+    actions: "செயல்கள்",
+    resetPassword: "கடவுச்சொல்லை மீட்டமை",
+    confirmDeactivatePrompt: "இந்தக் கணக்கைச் செயலிழக்கச் செய்ய நிச்சயமாக விரும்புகிறீர்களா? உள்நுழைவு முடக்கப்படும்.",
+    doctorsManagementSubtitle: "புதிய மருத்துவர்களைப் பதிவுசெய்து கணக்கு நிலைகளைக் கட்டுப்படுத்தவும்.",
+    staffManagementSubtitle: "செவிலியர் மற்றும் மருத்துவ செயல்பாட்டு ஊழியர்களை நிர்வகிக்கவும்.",
+    userManagementSubtitle: "கணினி அளவிலான பயனர் அடையாளக் கணக்குகள் மற்றும் கடவுச்சொல் கட்டுப்பாடுகள்.",
+    emergencyTitle: "அவசர சிகிச்சை நிர்வாகம்",
+    emergencySubtitle: "அவசர வழக்குகள், வகைப்பாடு, படுக்கைகள் மற்றும் நோயாளி ஓட்டத்தைக் கண்காணிக்கவும்.",
+    openEmergencyCase: "அவசர வழக்கைத் திறக்கவும்",
+    labTitle: "ஆய்வக நிர்வாகம்",
+    labSubtitle: "ஆய்வக ஆர்டர்கள், மாதிரிகள், முடிவுகள் மற்றும் அறிக்கைகளை நிர்வகிக்கவும்.",
+    newLabOrder: "புதிய ஆய்வக ஆர்டர்",
+    billingTitle: "பில்லிங் மற்றும் கட்டணங்கள்",
+    billingSubtitle: "இன்வாய்ஸ்கள், கட்டணங்கள் மற்றும் ரசீதுகளை நிர்வகிக்கவும்.",
+    createInvoice: "இன்வாய்ஸ் உருவாக்கவும்",
+
     // Footer
-    allRightsReserved: "© 2026 கேர்ஃப்ளோ AI. அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.",
+    allRightsReserved: "© 2026 CareFlow AI. அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.",
     hipaaCompliant: "HIPAA இணக்கமானது",
     encryption: "256-பிட் குறியாக்கம்",
     support247: "24/7 ஆதரவு",
   },
   hi: {
     // Brand & Header
-    brandTitle: "केयरफ्लो AI",
+    brandTitle: "CareFlow AI",
     brandSubtitle: "स्मार्ट अस्पताल प्रबंधन",
     searchPlaceholder: "अपॉइंटमेंट, डॉक्टर, चालान खोजें...",
     patientCare: "रोगी देखभाल",
@@ -397,29 +605,96 @@ export const translations: Record<Language, Record<string, string>> = {
     heroSubTextDesc: "आधुनिक स्वास्थ्य प्रबंधन में आपका विश्वसनीय भागीदार।",
 
     // Hero Section
+    goodHealthTag: "अच्छा स्वास्थ्य, उज्ज्वल कल",
     yourCare: "आपकी देखभाल,",
     organized: "सुव्यवस्थित।",
-    heroSubtext: "स्वागत है, {name}! अपने स्वास्थ्य, अपॉइंटमेंट और भुगतान को एक सुरक्षित स्थान पर प्रबंधित करें।",
-    personalHealth: "व्यक्तिगत स्वास्थ्य",
-    viewUpcomingVisits: "आगामी यात्राएं देखें",
-    viewYourPrescriptions: "अपने नुस्खे देखें",
-    viewInvoicesPayments: "चालान और भुगतान देखें",
-
-    // Cards
-    welcome: "स्वागत है",
-    welcomeDesc: "अपनी प्रोफ़ाइल पूरी करें, उपलब्ध डॉक्टर खोजें और अपॉइंटमेंट की पुष्टि करें।",
-    healthDataSafe: "आपका स्वास्थ्य डेटा हमारे पास सुरक्षित है",
+    welcomeUser: "स्वागत है, {name}!",
+    stayOnTopDesc: "अपने अपॉइंटमेंट, नुस्खे, स्वास्थ्य रिकॉर्ड और भुगतान को एक सुरक्षित स्थान पर प्रबंधित करें।",
+    smallSteps: "छोटे कदम स्वस्थ आप ♡",
+    healthDataSafeTitle: "आपका स्वास्थ्य डेटा हमारे पास सुरक्षित है",
     healthDataSafeDesc: "हम आपकी व्यक्तिगत जानकारी की सुरक्षा के लिए उद्योग-मानक सुरक्षा का उपयोग करते हैं।",
-    nextSteps: "अगले कदम",
-    nextStepsDesc: "अपनी स्वास्थ्य यात्रा को कुशलतापूर्वक प्रबंधित करने के लिए अगले कदम उठाएं।",
-    completeProfile: "प्रोफ़ाइल पूरी करें",
-    addPersonalDetails: "अपनी व्यक्तिगत जानकारी जोड़ें",
-    findSlot: "समय स्लॉट खोजें",
-    bookAnAppointment: "अपॉइंटमेंट बुक करें",
-    viewPayments: "भुगतान देखें",
-    checkInvoicesHistory: "चालान और भुगतान इतिहास जांचें",
-    goToMainDashboard: "मुख्य डैशबोर्ड पर जाएं",
-    mainDashboardDesc: "अस्पताल के सभी कार्यों को प्रबंधित करने के लिए मुख्य पोर्टल तक पहुंचें।",
+    learnMore: "अधिक जानें →",
+
+    // Health Awareness & Special Days
+    healthAwarenessSectionTitle: "स्वास्थ्य जागरूकता और विशेष दिन",
+    worldHeartDayTitle: "विश्व हृदय दिवस",
+    worldHeartDaySub: "एक स्वस्थ दिल उज्जवल कल की ओर ले जाता है।",
+    worldHeartDayDesc: "नियमित जांच, संतुलित आहार और सक्रिय जीवनशैली से अपने दिल का ख्याल रखें।",
+    healthyHeartsBadge: "स्वस्थ दिल खुशहाल जीवन",
+
+    worldDiabetesDayTitle: "विश्व मधुमेह दिवस",
+    worldDiabetesDaySub: "अपने जोखिम को जानें, अपने भविष्य की रक्षा करें।",
+    worldDiabetesDayDesc: "अपने रक्त शर्करा के स्तर की नियमित निगरानी करें, स्वस्थ आहार बनाए रखें और सक्रिय रहें।",
+    beatDiabetesBadge: "मधुमेह को मिलकर हराएं",
+
+    worldMentalHealthDayTitle: "विश्व मानसिक स्वास्थ्य दिवस",
+    worldMentalHealthDaySub: "मानसिक स्वास्थ्य एक सार्वभौमिक मानव अधिकार है।",
+    worldMentalHealthDayDesc: "आराम को प्राथमिकता दें, अपनों से जुड़ें, माइंडफुलनेस का अभ्यास करें।",
+    mindMattersBadge: "मन हर दिन मायने रखता है",
+
+    worldHealthDayTitle: "विश्व स्वास्थ्य दिवस",
+    worldHealthDaySub: "मेरा स्वास्थ्य, मेरा अधिकार।",
+    worldHealthDayDesc: "निवारक स्वास्थ्य जांच, उचित जलयोजन और नियमित कल्याण ट्रैकिंग के साथ अपने जीवन को सशक्त बनाएं।",
+    healthForAllBadge: "सभी के लिए स्वास्थ्य",
+
+    // Quick Health Tips
+    quickHealthTips: "त्वरित स्वास्थ्य टिप्स",
+    regularCheckups: "नियमित जांच",
+    keepHeartHealthy: "अपने दिल को स्वस्थ रखें",
+    balancedDiet: "संतुलित आहार",
+    chooseNutritious: "पौष्टिक भोजन चुनें",
+    stayActive: "सक्रिय रहें",
+    moveForHealth: "स्वस्थ रहने के लिए व्यायाम करें",
+    bloodGlucoseTest: "ब्लड ग्लूकोज टेस्ट",
+    regularScreening: "नियमित जांच",
+    lowGlycemicMeals: "कम ग्लाइसेमिक भोजन",
+    nutritiousChoices: "पौष्टिक विकल्प",
+    dailyExercise: "दैनिक व्यायाम",
+    movementMins: "30 मिनट व्यायाम",
+    mindfulnessPractice: "माइंडफुलनेस अभ्यास",
+    dailyMeditation: "दैनिक ध्यान",
+    restfulSleep: "आरामदायक नींद",
+    hoursNightly: "रात में 7-8 घंटे",
+    talkConnect: "बात करें और जुड़ें",
+    supportNetwork: "सहायता नेटवर्क",
+    annualScreening: "वार्षिक जांच",
+    comprehensiveCare: "व्यापक देखभाल",
+    hydrationFirst: "हाइड्रेशन सबसे पहले",
+    litersDaily: "रोजाना 2-3 लीटर",
+    wellnessTracking: "कल्याण ट्रैकिंग",
+    monitorVitals: "महत्वपूर्ण संकेतों की निगरानी करें",
+
+    // Care Journey Timeline
+    careJourneyTitle: "आपकी देखभाल यात्रा की समयावधि",
+    stepProfileSetup: "प्रोफ़ाइल सेटअप",
+    stepSlotSelection: "स्लॉट चयन",
+    stepDoctorConsultation: "डॉक्टर परामर्श",
+    stepDigitalPrescription: "डिजिटल नुस्खा",
+    stepPaymentReceipt: "भुगतान और रसीद",
+    statusCompleted: "पूरा हुआ",
+    statusConfirmed: "पुष्टि की गई",
+    statusPending: "लंबित",
+    statusCancelled: "रद्द किया गया",
+
+    // Dashboard 3 Cards
+    upcomingAppointments: "आगामी अपॉइंटमेंट",
+    viewAll: "सभी देखें →",
+    nextVisit: "अगली यात्रा",
+    noUpcomingVisits: "कोई आगामी विज़िट निर्धारित नहीं है",
+    noUpcomingAppointmentsTitle: "कोई निर्धारित अपॉइंटमेंट नहीं",
+    noUpcomingAppointmentsSub: "वर्तमान में आपकी कोई डॉक्टर विज़िट निर्धारित नहीं है।",
+    bookNewAppointmentBtn: "अपॉइंटमेंट बुक करें",
+    noPrescriptionsYetShort: "कोई सक्रिय नुस्खा नहीं",
+    noHealthRecordsYet: "अभी तक कोई स्वास्थ्य रिकॉर्ड अपलोड नहीं किया गया है",
+    addToCalendar: "+ कैलेंडर में जोड़ें",
+    activePrescriptionsHeading: "मेरे नुस्खे",
+    activePrescriptionsLabel: "सक्रिय नुस्खे",
+    lastUpdated: "अंतिम बार अद्यतन",
+    viewPrescriptionsBtn: "नुस्खे देखें →",
+    healthRecordsHeading: "स्वास्थ्य रिकॉर्ड",
+    digitalConsultationNotes: "डिजिटल परामर्श नोट्स",
+    verifiedByHospital: "अस्पताल कर्मचारियों द्वारा सत्यापित",
+    viewRecordsBtn: "रिकॉर्ड देखें →",
 
     // Settings
     accountPortalSettings: "खाता और पोर्टल सेटिंग्स",
@@ -484,6 +759,7 @@ export const translations: Record<Language, Record<string, string>> = {
     payNow: "💳 अभी भुगतान करें (₹1,000)",
     cancelAppointment: "अपॉइंटमेंट रद्द करें",
     noAppointmentsYet: "अभी तक कोई अपॉइंटमेंट नहीं है।",
+    reason: "कारण:",
 
     // Sub-views: Payments
     paymentsAndReceiptsTitle: "भुगतान और चालान",
@@ -499,7 +775,7 @@ export const translations: Record<Language, Record<string, string>> = {
     issuedOn: "जारी करने की तिथि:",
     prescribedMedicines: "निर्धारित दवाएं:",
     viewPrescriptionDetails: "नुस्खे का विवरण देखें",
-    downloadDocument: "📥 दस्तावेज़ डाउनलोड करें",
+    downloadDocument: "दस्तावेज़ डाउनलोड करें",
     noPrescriptionsYet: "अभी तक कोई नुस्खा जारी नहीं किया गया है।",
 
     // Staff & Operations
@@ -521,185 +797,47 @@ export const translations: Record<Language, Record<string, string>> = {
     backToStaffPortal: "कर्मचारी पोर्टल पर वापस जाएँ",
     backHome: "होम पर वापस जाएँ",
 
+    // Admin Management
+    adminSectionTitle: "प्रशासन",
+    doctorsManagement: "डॉक्टर",
+    staffManagement: "कर्मचारी",
+    userManagement: "उपयोगकर्ता प्रबंधन",
+    registerDoctor: "डॉक्टर पंजीकृत करें",
+    registerStaff: "कर्मचारी पंजीकृत करें",
+    personalInformation: "व्यक्तिगत जानकारी",
+    professionalInformation: "पेशेवर जानकारी",
+    employmentInformation: "रोजगार की जानकारी",
+    accountInformation: "खाता जानकारी",
+    staffType: "कर्मचारी का प्रकार",
+    designation: "पद",
+    employeeId: "कर्मचारी आईडी",
+    consultationFee: "परामर्श शुल्क",
+    activate: "सक्रिय करें",
+    deactivate: "निष्क्रिय करें",
+    delete: "हटाएं",
+    activeStatus: "सक्रिय",
+    deactivatedStatus: "निष्क्रिय",
+    actions: "कार्रवाइयां",
+    resetPassword: "पासवर्ड रीसेट करें",
+    confirmDeactivatePrompt: "क्या आप वाकई इस खाते को निष्क्रिय करना चाहते हैं? लॉगिन और पहुंच अक्षम कर दी जाएगी।",
+
     // Footer
-    allRightsReserved: "© 2026 केयरफ्लो AI। सर्वाधिकार सुरक्षित।",
+    allRightsReserved: "© 2026 CareFlow AI। सर्वाधिकार सुरक्षित।",
     hipaaCompliant: "HIPAA अनुपालित",
     encryption: "256-बिट एन्क्रिप्शन",
     support247: "24/7 सहायता",
-  },
-  es: {
-    // Brand & Header
-    brandTitle: "CareFlow AI",
-    brandSubtitle: "Gestión Hospitalaria Inteligente",
-    searchPlaceholder: "Buscar citas, médicos, facturas...",
-    patientCare: "ATENCIÓN AL PACIENTE",
-    patientPortal: "Portal del Paciente",
-    home: "Inicio",
-    profile: "Perfil",
-    bookAppointment: "Reservar cita",
-    appointments: "Mis Citas",
-    paymentsInvoices: "Pagos y Facturas",
-    myPrescriptions: "Mis Recetas",
-    settings: "Configuración",
-    signOut: "Cerrar sesión",
-    needHelp: "¿Necesita ayuda?",
-    wereHereForYou: "Estamos aquí para usted",
-    contactSupport: "Contactar Soporte",
-    language: "Idioma",
-
-    // Login & Register Pages
-    signInTitle: "Inicie sesión en su cuenta",
-    registerTitle: "Cree su cuenta",
-    signInSub: "Acceda a su panel y gestione sus servicios de salud.",
-    registerSub: "Rellene sus datos a continuación para registrar su cuenta.",
-    patientRole: "Paciente",
-    doctorRole: "Doctor",
-    staffRole: "Personal",
-    adminRole: "Admin",
-    emailOrPhoneLabel: "Correo electrónico o número de teléfono de 10 dígitos",
-    passwordLabel: "Contraseña",
-    fullNameLabel: "Nombre completo",
-    confirmPasswordLabel: "Confirmar contraseña",
-    signInBtn: "Iniciar sesión",
-    registerBtn: "Registrar cuenta",
-    needAccountPrompt: "¿No tiene una cuenta?",
-    haveAccountPrompt: "¿Ya tiene una cuenta?",
-    registerLink: "Registrarse como Paciente",
-    signInLink: "Iniciar sesión",
-    tagline: "Mejor Atención | Operaciones Más Inteligentes | Mañana Más Saludable",
-    heroHeading: "Bienvenido a CareFlow",
-    heroSubTextDesc: "Su socio de confianza en la gestión sanitaria moderna.",
-
-    // Hero Section
-    yourCare: "Su atención,",
-    organized: "organizada.",
-    heroSubtext: "¡Bienvenido de nuevo, {name}! Gestione su salud, citas y pagos en un solo lugar seguro.",
-    personalHealth: "Salud Personal",
-    viewUpcomingVisits: "Ver próximas visitas",
-    viewYourPrescriptions: "Ver sus recetas",
-    viewInvoicesPayments: "Ver facturas y pagos",
-
-    // Cards
-    welcome: "Bienvenido",
-    welcomeDesc: "Complete su perfil, busque un médico disponible y confirme su cita.",
-    healthDataSafe: "Sus datos de salud están seguros con nosotros",
-    healthDataSafeDesc: "Utilizamos seguridad estándar de la industria para proteger su información personal.",
-    nextSteps: "Próximos pasos",
-    nextStepsDesc: "Tome los siguientes pasos para gestionar su salud de manera eficiente.",
-    completeProfile: "Completar perfil",
-    addPersonalDetails: "Añada sus datos personales",
-    findSlot: "Buscar horario",
-    bookAnAppointment: "Reservar una cita",
-    viewPayments: "Ver Pagos",
-    checkInvoicesHistory: "Consultar facturas e historial de pagos",
-    goToMainDashboard: "Ir al Panel Principal",
-    mainDashboardDesc: "Acceda al panel principal para gestionar todas las operaciones hospitalarias.",
-
-    // Settings
-    accountPortalSettings: "Configuración de Cuenta y Portal",
-    manageSettingsDesc: "Gestione sus alertas, credenciales de seguridad y preferencias.",
-    notificationPreferences: "Preferencias de Notificación",
-    smsReminders: "Recordatorios de Citas por SMS",
-    smsRemindersDesc: "Reciba alertas por SMS 2 horas antes de sus citas médicas.",
-    emailReceipts: "Facturación y Recibos por Correo",
-    emailReceiptsDesc: "Envíe automáticamente recibos de pago en PDF por correo electrónico.",
-    prescriptionAlerts: "Alertas de Recetas Emitidas",
-    prescriptionAlertsDesc: "Reciba notificaciones en tiempo real cuando su médico emita una receta.",
-    securityCredentials: "Seguridad y Credenciales",
-    currentPassword: "Contraseña Actual",
-    newPassword: "Nueva Contraseña (mínimo 12 caracteres)",
-    updatePassword: "Actualizar Contraseña",
-    portalRegionalPreferences: "Preferencias Regionales del Portal",
-    preferredPortalLanguage: "Idioma Preferido del Portal",
-    portalDisplayTheme: "Tema de Pantalla del Portal",
-    lightTheme: "Modo Médico Claro (Recomendado)",
-    darkTheme: "Modo Médico Oscuro",
-    saveAllSettings: "Guardar Toda la Configuración",
-    backToOverview: "Volver a la vista general",
-
-    // Sub-views: Profile
-    patientProfileTitle: "Perfil del Paciente e Información Personal",
-    dob: "Fecha de nacimiento",
-    phone: "Teléfono",
-    gender: "Género",
-    selectGender: "Seleccionar género",
-    male: "Masculino",
-    female: "Femenino",
-    nonBinary: "No binario",
-    preferNotToSay: "Prefiero no decirlo",
-    preferredLang: "Idioma preferido",
-    emergencyContact: "Contacto de emergencia",
-    bloodGroup: "Grupo sanguíneo",
-    selectBloodGroup: "Seleccionar grupo sanguíneo",
-    doNotKnow: "No lo sé",
-    address: "Dirección",
-    allergiesOptional: "Alergias (opcional)",
-    allergiesPlaceholder: "Medicamentos, alimentos u otras alergias conocidas",
-    medicalConditionsOptional: "Condiciones médicas existentes (opcional)",
-    medicalConditionsPlaceholder: "Por ejemplo: diabetes, asma o hipertensión",
-    saveProfile: "Guardar perfil",
-
-    // Sub-views: Book Appointment
-    findAppointment: "Buscar una cita",
-    chooseDepartment: "Elegir un departamento",
-    date: "Fecha",
-    searchSlots: "Buscar horarios disponibles",
-    searching: "Buscando...",
-    availableTimes: "horarios disponibles",
-    selectTimeToReserve: "Seleccione una hora para reservar y confirmar",
-    chooseDeptAndDatePrompt: "Elija un departamento y una fecha para ver los horarios disponibles.",
-    noSlotsFound: "No se encontraron horarios disponibles para este departamento y fecha.",
-
-    // Sub-views: Appointments
-    myAppointments: "Mis Citas",
-    statusLabel: "Estado:",
-    paidBadge: "✓ PAGADO",
-    viewReceipt: "Ver Recibo",
-    payNow: "💳 Pagar Ahora (₹1,000)",
-    cancelAppointment: "Cancelar cita",
-    noAppointmentsYet: "No hay citas aún.",
-
-    // Sub-views: Payments
-    paymentsAndReceiptsTitle: "Pagos y Facturas",
-    noPaymentsFound: "No se encontraron registros de pago aún. Reserve una cita y haga clic en \"Pagar ahora\".",
-    amount: "Monto:",
-    provider: "Proveedor:",
-    paidAt: "Pagado el:",
-
-    // Sub-views: Prescriptions
-    myPrescriptionsTitle: "Mis Recetas Médicas",
-    doctor: "Doctor:",
-    diagnosis: "Diagnóstico:",
-    issuedOn: "Emitido el:",
-    prescribedMedicines: "Medicamentos recetados:",
-    viewPrescriptionDetails: "Ver Detalles de la Receta",
-    downloadDocument: "📥 Descargar Documento",
-    noPrescriptionsYet: "No hay recetas emitidas aún.",
-
-    // Staff & Operations
-    staffWorkspace: "Espacio del Personal",
-    clinicalOperations: "OPERACIONES CLÍNICAS",
-    staffWorkspaceTitle: "Espacio del personal.",
-    doctorApprovals: "Aprobaciones de médicos",
-    refreshDoctorData: "Actualizar datos médicos",
-    applyAsDoctor: "Solicitar ser médico",
-    specialization: "Especialización",
-    selectSpecialization: "Seleccionar especialización",
-    department: "Departamento",
-    qualifications: "Calificaciones",
-    experienceYears: "Años de experiencia",
-    medicalLicenseNumber: "Número de licencia médica",
-    submitApplication: "Enviar solicitud de médico",
-    liveOperations: "OPERACIONES EN VIVO",
-    operationalControl: "Control operacional.",
-    backToStaffPortal: "Volver al Portal del Personal",
-    backHome: "Volver al Inicio",
-
-    // Footer
-    allRightsReserved: "© 2026 CareFlow AI. Todos los derechos reservados.",
-    hipaaCompliant: "Compatible con HIPAA",
-    encryption: "Cifrado de 256 bits",
-    support247: "Soporte 24/7",
+    doctorsManagementSubtitle: "नए डॉक्टरों को पंजीकृत करें और खातों को नियंत्रित करें।",
+    staffManagementSubtitle: "नर्सिंग और नैदानिक कर्मचारियों का प्रबंधन करें।",
+    userManagementSubtitle: "सिस्टम-व्यापी उपयोगकर्ता खातों और पासवर्ड का प्रबंधन करें।",
+    emergencyTitle: "आपातकालीन प्रबंधन",
+    emergencySubtitle: "आपातकालीन मामलों, ट्राइएज, बेड और मरीज के प्रवाह की निगरानी करें।",
+    openEmergencyCase: "आपातकालीन मामला खोलें",
+    labTitle: "प्रयोगशाला प्रबंधन",
+    labSubtitle: "प्रयोगशाला के आदेश, नमूने, परिणाम और रिपोर्ट का प्रबंधन करें।",
+    newLabOrder: "नया लैब ऑर्डर",
+    billingTitle: "बिलिंग और भुगतान",
+    billingSubtitle: "चालान, शुल्क, भुगतान और रसीदों का प्रबंधन करें।",
+    createInvoice: "चालान बनाएं",
   },
 };
 
@@ -753,4 +891,52 @@ export function useLanguage() {
     setLang: setGlobalLanguage,
     t: translations[lang] || translations.en,
   };
+}
+
+const NAME_TRANSLITERATIONS: Record<string, Record<Language, string>> = {
+  mary: { en: "Mary", ta: "மேரி", hi: "मैरी" },
+  "mary smith": { en: "Mary Smith", ta: "மேரி ஸ்மித்", hi: "मैरी स्मिथ" },
+  john: { en: "John", ta: "ஜான்", hi: "जॉन" },
+  "dr. anitha kumar": { en: "Dr. Anitha Kumar", ta: "டாக்டர் அனிதா குமார்", hi: "डॉक्टर अनिता कुमार" },
+  "anitha kumar": { en: "Anitha Kumar", ta: "அனிதா குமார்", hi: "अनिता कुमार" },
+  "dr. rajesh sharma": { en: "Dr. Rajesh Sharma", ta: "டாக்டர் ராஜேஷ் சர்மா", hi: "डॉक्टर राजेश शर्मा" },
+  "rajesh sharma": { en: "Rajesh Sharma", ta: "ராஜேஷ் சர்மா", hi: "राजेश शर्मा" },
+  "dr. priya patel": { en: "Dr. Priya Patel", ta: "டாக்டர் ப்ரியா படேல்", hi: "डॉक्टर प्रिया पटेल" },
+  "priya patel": { en: "Priya Patel", ta: "ப்ரியா படேல்", hi: "प्रिया पटेल" },
+  "dr. smith": { en: "Dr. Smith", ta: "டாக்டர் ஸ்மித்", hi: "डॉक्टर स्मिथ" },
+  smith: { en: "Smith", ta: "ஸ்மித்", hi: "स्मिथ" },
+  "patient account": { en: "Patient Account", ta: "நோயாளி கணக்கு", hi: "रोगी खाता" },
+  "staff member": { en: "Staff Member", ta: "பணியாளர்", hi: "कर्मचारी" },
+  "doctor user": { en: "Doctor User", ta: "மருத்துவர் பயனர்", hi: "डॉक्टर उपयोगकर्ता" },
+  "operations control": { en: "Operations Control", ta: "செயல்பாட்டுக் கட்டுப்பாடு", hi: "संचालन नियंत्रण" },
+  administrator: { en: "Administrator", ta: "நிர்வாகி", hi: "प्रशासक" },
+  admin: { en: "Admin", ta: "நிர்வாகி", hi: "प्रशासक" },
+};
+
+export function getLocalizedDisplayName(name: string | undefined | null, lang: Language): string {
+  if (!name || typeof name !== "string") return "";
+  const cleanName = name.trim();
+  if (!cleanName) return "";
+  const key = cleanName.toLowerCase();
+
+  if (NAME_TRANSLITERATIONS[key]?.[lang]) {
+    return NAME_TRANSLITERATIONS[key][lang];
+  }
+
+  if (key.startsWith("dr.") || key.startsWith("dr ")) {
+    const rawName = cleanName.replace(/^dr\.\s*/i, "").replace(/^dr\s*/i, "").trim();
+    const subKey = rawName.toLowerCase();
+    const translatedSubName = NAME_TRANSLITERATIONS[subKey]?.[lang] || getLocalizedDisplayName(rawName, lang);
+    if (lang === "ta") return `டாக்டர் ${translatedSubName}`;
+    if (lang === "hi") return `डॉक्टर ${translatedSubName}`;
+    return `Dr. ${translatedSubName}`;
+  }
+
+  const words = cleanName.split(/\s+/);
+  const translatedWords = words.map((w) => {
+    const wKey = w.toLowerCase();
+    return NAME_TRANSLITERATIONS[wKey]?.[lang] || w;
+  });
+
+  return translatedWords.join(" ");
 }

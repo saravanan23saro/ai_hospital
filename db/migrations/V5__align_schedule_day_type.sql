@@ -1,1 +1,2 @@
--- Executable migration is packaged at apps/api/src/main/resources/db/migration/V5__align_schedule_day_type.sql.
+ALTER TABLE doctor_schedule
+  ALTER COLUMN day_of_week TYPE integer;

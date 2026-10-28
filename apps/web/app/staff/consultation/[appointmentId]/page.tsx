@@ -150,6 +150,16 @@ export default function DoctorConsultationPage({
     setLoading(true);
     setError("");
     try {
+      const identity = await api("/api/v1/auth/me");
+      if (identity?.roles?.includes("DOCTOR")) {
+        router.replace(`/doctor/consultation/${appointmentId}`);
+        return;
+      }
+      if (!identity?.roles?.includes("STAFF") && !identity?.roles?.includes("ADMIN")) {
+        router.replace("/patient");
+        return;
+      }
+
       // 1. Start or fetch consultation
       const cons = await api(`/api/v1/consultations/start/${appointmentId}`, {
         method: "POST",
@@ -435,7 +445,7 @@ export default function DoctorConsultationPage({
       : consultation?.appointmentNumber || "APT-CONSULTATION";
 
   return (
-    <main className="portal" style={{ paddingTop: "84px" }}>
+    <main className="portal">
       <AppHeader
         user={{ fullName: "Doctor Workspace", roles: ["DOCTOR"] }}
         breadcrumbs={[
@@ -853,7 +863,7 @@ export default function DoctorConsultationPage({
                   onClick={() => downloadPrescriptionDoc(consultation.prescription.prescriptionId, consultation.prescription.prescriptionNumber)}
                   style={{
                     padding: "12px 24px",
-                    background: "#0284c7",
+                    background: "#A67C52",
                     color: "#fff",
                     borderRadius: "8px",
                     border: "none",
@@ -919,15 +929,15 @@ export default function DoctorConsultationPage({
             >
               <div
                 style={{
-                  borderBottom: "2px solid #0284c7",
+                  borderBottom: "2px solid #A67C52",
                   paddingBottom: "1rem",
                   marginBottom: "1.5rem",
                 }}
               >
-                <h2 style={{ margin: 0, color: "#0f172a" }}>
+                <h2 style={{ margin: 0, color: "#3D3228" }}>
                   CAREFLOW SMART HOSPITAL
                 </h2>
-                <p style={{ margin: "4px 0 0", color: "#64748b" }}>
+                <p style={{ margin: "4px 0 0", color: "#76685B" }}>
                   Medical Prescription Review & Final Submission
                 </p>
               </div>
@@ -935,9 +945,9 @@ export default function DoctorConsultationPage({
               {modalError && (
                 <div
                   style={{
-                    background: "#fef2f2",
-                    border: "2px solid #ef4444",
-                    color: "#991b1b",
+                    background: "#F7F1E8",
+                    border: "2px solid #C4A484",
+                    color: "#3D3228",
                     padding: "14px 16px",
                     borderRadius: "8px",
                     marginBottom: "1.5rem",
@@ -954,7 +964,7 @@ export default function DoctorConsultationPage({
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
                   gap: "1rem",
-                  background: "#f8fafc",
+                  background: "#FAF8F4",
                   padding: "1rem",
                   borderRadius: "8px",
                   marginBottom: "1.5rem",
@@ -1046,7 +1056,7 @@ export default function DoctorConsultationPage({
                   style={{
                     flex: 1,
                     padding: "12px 20px",
-                    background: "#083f38",
+                    background: "#A67C52",
                     color: "#fff",
                     border: "none",
                     borderRadius: "6px",

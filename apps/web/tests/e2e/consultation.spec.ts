@@ -5,12 +5,12 @@ test("complete patient-doctor consultation and prescription workflow", async ({ 
 
   // 1. Patient Registration & Profile Setup
   await page.goto("/");
-  await page.getByRole("button", { name: "Create an account" }).click();
+  await page.getByRole("button", { name: /register as a patient/i }).click();
   await page.getByLabel("Full Name").fill("Consultation Test Patient");
-  await page.getByLabel("Email or Phone Number").fill(`consultation-patient-${unique}@careflow.test`);
+  await page.getByLabel(/email address or 10-digit phone number/i).fill(`consultation-patient-${unique}@careflow.test`);
   await page.getByLabel("Password", { exact: true }).fill("PatientTest!2026");
   await page.getByLabel("Confirm Password").fill("PatientTest!2026");
-  await page.getByRole("button", { name: "Create Account" }).click();
+  await page.getByRole("button", { name: /register account/i }).click();
 
   await expect(page).toHaveURL(/\/patient$/, { timeout: 15000 });
   await page.getByRole("button", { name: "Profile", exact: true }).click();

@@ -42,6 +42,9 @@ public class DatabaseConfiguration {
             String path = uri.getPath() != null && !uri.getPath().isBlank() ? uri.getPath() : "/hospital";
 
             jdbcUrl = "jdbc:postgresql://" + host + ":" + port + path;
+            if (uri.getQuery() != null && !uri.getQuery().isBlank()) {
+                jdbcUrl += "?" + uri.getQuery();
+            }
         } catch (Exception e) {
             jdbcUrl = rawUrl;
             if (!jdbcUrl.startsWith("jdbc:")) {

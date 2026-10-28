@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppHeader from "../components/Header";
-import { Language, translations, useLanguage } from "../lib/i18n";
+import { getLocalizedDisplayName, Language, translations, useLanguage } from "../lib/i18n";
 import {
   Home,
   User,
@@ -129,6 +129,8 @@ export default function PatientPortal() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [searchedSlots, setSearchedSlots] = useState(false);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [payments, setPayments] = useState<PaymentView[]>([]);
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
@@ -136,6 +138,12 @@ export default function PatientPortal() {
   const [activePaymentModal, setActivePaymentModal] = useState<{ appointmentId: string; appointmentNumber: string } | null>(null);
   const [cancelModalAppointment, setCancelModalAppointment] = useState<{ id: string; number: string } | null>(null);
   const [cancelReasonInput, setCancelReasonInput] = useState("");
+  const [rescheduleModalAppointment, setRescheduleModalAppointment] = useState<Appointment | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleSlots, setRescheduleSlots] = useState<Slot[]>([]);
+  const [selectedRescheduleSlot, setSelectedRescheduleSlot] = useState<Slot | null>(null);
+  const [rescheduleReason, setRescheduleReason] = useState("");
+  const [loadingRescheduleSlots, setLoadingRescheduleSlots] = useState(false);
   const [selectedGateway, setSelectedGateway] = useState<"MOCK" | "RAZORPAY" | "STRIPE">("MOCK");
   const [selectedMethod, setSelectedMethod] = useState<string>("CARD");
   const [receiptData, setReceiptData] = useState<ReceiptView | null>(null);
@@ -151,54 +159,54 @@ export default function PatientPortal() {
     () => [
       {
         date: "September 29",
-        title: "World Heart Day",
-        subtitle: "A healthier heart leads to a brighter tomorrow.",
-        desc: "Take care of your heart with regular checkups, a balanced diet, and an active lifestyle.",
-        badgeText: "Healthy Hearts Happier Lives",
+        title: t.worldHeartDayTitle || "World Heart Day",
+        subtitle: t.worldHeartDaySub || "A healthier heart leads to a brighter tomorrow.",
+        desc: t.worldHeartDayDesc || "Take care of your heart with regular checkups, a balanced diet, and an active lifestyle.",
+        badgeText: t.healthyHeartsBadge || "Healthy Hearts Happier Lives",
         tips: [
-          { icon: "heart", title: "Regular Checkups", sub: "Keep your heart healthy" },
-          { icon: "utensils", title: "Balanced Diet", sub: "Choose nutritious foods" },
-          { icon: "activity", title: "Stay Active", sub: "Move for a healthier you" },
+          { icon: "heart", title: t.regularCheckups || "Regular Checkups", sub: t.keepHeartHealthy || "Keep your heart healthy" },
+          { icon: "utensils", title: t.balancedDiet || "Balanced Diet", sub: t.chooseNutritious || "Choose nutritious foods" },
+          { icon: "activity", title: t.stayActive || "Stay Active", sub: t.moveForHealth || "Move for a healthier you" },
         ],
       },
       {
         date: "November 14",
-        title: "World Diabetes Day",
-        subtitle: "Know your risk, protect your future.",
-        desc: "Monitor your blood sugar levels regularly, maintain a healthy diet, and stay physically active.",
-        badgeText: "Beat Diabetes Together",
+        title: t.worldDiabetesDayTitle || "World Diabetes Day",
+        subtitle: t.worldDiabetesDaySub || "Know your risk, protect your future.",
+        desc: t.worldDiabetesDayDesc || "Monitor your blood sugar levels regularly, maintain a healthy diet, and stay physically active.",
+        badgeText: t.beatDiabetesBadge || "Beat Diabetes Together",
         tips: [
-          { icon: "activity", title: "Blood Glucose Test", sub: "Regular screening" },
-          { icon: "utensils", title: "Low Glycemic Meals", sub: "Nutritious choices" },
-          { icon: "activity", title: "Daily Exercise", sub: "30 mins of movement" },
+          { icon: "activity", title: t.bloodGlucoseTest || "Blood Glucose Test", sub: t.regularScreening || "Regular screening" },
+          { icon: "utensils", title: t.lowGlycemicMeals || "Low Glycemic Meals", sub: t.nutritiousChoices || "Nutritious choices" },
+          { icon: "activity", title: t.dailyExercise || "Daily Exercise", sub: t.movementMins || "30 mins of movement" },
         ],
       },
       {
         date: "October 10",
-        title: "World Mental Health Day",
-        subtitle: "Mental health is a universal human right.",
-        desc: "Prioritize rest, connect with loved ones, practice mindfulness, and seek guidance when needed.",
-        badgeText: "Mind Matters Every Day",
+        title: t.worldMentalHealthDayTitle || "World Mental Health Day",
+        subtitle: t.worldMentalHealthDaySub || "Mental health is a universal human right.",
+        desc: t.worldMentalHealthDayDesc || "Prioritize rest, connect with loved ones, practice mindfulness, and seek guidance when needed.",
+        badgeText: t.mindMattersBadge || "Mind Matters Every Day",
         tips: [
-          { icon: "heart", title: "Mindfulness Practice", sub: "Daily meditation" },
-          { icon: "activity", title: "Restful Sleep", sub: "7-8 hours nightly" },
-          { icon: "utensils", title: "Talk & Connect", sub: "Support network" },
+          { icon: "heart", title: t.mindfulnessPractice || "Mindfulness Practice", sub: t.dailyMeditation || "Daily meditation" },
+          { icon: "activity", title: t.restfulSleep || "Restful Sleep", sub: t.hoursNightly || "7-8 hours nightly" },
+          { icon: "utensils", title: t.talkConnect || "Talk & Connect", sub: t.supportNetwork || "Support network" },
         ],
       },
       {
         date: "April 7",
-        title: "World Health Day",
-        subtitle: "My health, my right.",
-        desc: "Empower your life with preventative health checkups, proper hydration, and routine wellness tracking.",
-        badgeText: "Health For All",
+        title: t.worldHealthDayTitle || "World Health Day",
+        subtitle: t.worldHealthDaySub || "My health, my right.",
+        desc: t.worldHealthDayDesc || "Empower your life with preventative health checkups, proper hydration, and routine wellness tracking.",
+        badgeText: t.healthForAllBadge || "Health For All",
         tips: [
-          { icon: "heart", title: "Annual Screening", sub: "Comprehensive care" },
-          { icon: "utensils", title: "Hydration First", sub: "2-3 Liters daily" },
-          { icon: "activity", title: "Wellness Tracking", sub: "Monitor vitals" },
+          { icon: "heart", title: t.annualScreening || "Annual Screening", sub: t.comprehensiveCare || "Comprehensive care" },
+          { icon: "utensils", title: t.hydrationFirst || "Hydration First", sub: t.litersDaily || "2-3 Liters daily" },
+          { icon: "activity", title: t.wellnessTracking || "Wellness Tracking", sub: t.monitorVitals || "Monitor vitals" },
         ],
       },
     ],
-    []
+    [t]
   );
 
   useEffect(() => {
@@ -246,17 +254,66 @@ export default function PatientPortal() {
           api("/api/v1/auth/me").catch(() => null),
         ]);
         if (authMe?.roles && (authMe.roles.includes("DOCTOR") || authMe.roles.includes("STAFF") || authMe.roles.includes("ADMIN"))) {
-          router.replace("/staff");
+          if (authMe.roles.includes("DOCTOR")) router.replace("/doctor");
+          else if (authMe.roles.includes("STAFF")) router.replace("/staff");
+          else if (authMe.roles.includes("ADMIN")) router.replace("/operations");
           return;
         }
         if (prof) setProfile(prof);
         if (authMe) setUserAccount(authMe);
+
+        if (prof?.patientId) {
+          const [appts, rxs, pmts] = await Promise.all([
+            api("/api/v1/patients/me/appointments").catch(() => []),
+            api(`/api/v1/prescriptions/patient/${prof.patientId}`).catch(() => []),
+            api(`/api/v1/payments/patient/${prof.patientId}`).catch(() => []),
+          ]);
+          setAppointments(Array.isArray(appts) ? appts : []);
+          setPrescriptions(Array.isArray(rxs) ? rxs : []);
+          setPayments(Array.isArray(pmts) ? pmts : []);
+        } else {
+          setAppointments([]);
+          setPrescriptions([]);
+          setPayments([]);
+        }
       } catch {
         // ignore background fetch error
       }
     }
     loadInitialUserData();
   }, [token, router]);
+
+  useEffect(() => {
+    if (!token || token === "demo-patient-token") return;
+    let es: EventSource | null = null;
+    try {
+      const sseUrl = `${API}/api/v1/schedules/stream?token=${encodeURIComponent(token)}`;
+      es = new EventSource(sseUrl);
+
+      const handleScheduleUpdate = () => {
+        api("/api/v1/patients/me/appointments")
+          .then((res) => {
+            if (Array.isArray(res)) setAppointments(res);
+          })
+          .catch(() => {});
+
+        if (selectedDepartmentId && selectedDate) {
+          reloadAvailableSlots(selectedDepartmentId, selectedDate);
+        }
+      };
+
+      es.addEventListener("APPOINTMENT_BOOKED", handleScheduleUpdate);
+      es.addEventListener("APPOINTMENT_CANCELLED", handleScheduleUpdate);
+      es.addEventListener("APPOINTMENT_RESCHEDULED", handleScheduleUpdate);
+      es.addEventListener("APPOINTMENT_SLOT_AVAILABLE", handleScheduleUpdate);
+    } catch {
+      // Non-fatal if EventSource fails
+    }
+
+    return () => {
+      if (es) es.close();
+    };
+  }, [token, selectedDepartmentId, selectedDate]);
 
   async function api(path: string, options: RequestInit = {}) {
     const response = await fetch(API + path, {
@@ -362,6 +419,20 @@ export default function PatientPortal() {
     }
   }
 
+  async function reloadAvailableSlots(deptId?: string, dateVal?: string) {
+    const targetDept = deptId !== undefined ? deptId : selectedDepartmentId;
+    const targetDate = dateVal !== undefined ? dateVal : selectedDate;
+    if (!targetDept || !targetDate) return;
+    try {
+      const results = await api(
+        `/api/v1/slots?departmentId=${encodeURIComponent(targetDept)}&date=${encodeURIComponent(targetDate)}`,
+      );
+      setSlots(results || []);
+    } catch {
+      // non-fatal reload
+    }
+  }
+
   async function openBooking() {
     setError("");
     try {
@@ -374,9 +445,10 @@ export default function PatientPortal() {
       }
       setProfile(currentProfile);
       setDepartments(await api("/api/v1/departments"));
-      setSlots([]);
-      setSearchedSlots(false);
       setView("book");
+      if (selectedDepartmentId && selectedDate) {
+        reloadAvailableSlots(selectedDepartmentId, selectedDate);
+      }
     } catch (e) {
       if (e instanceof ApiError && e.code === "PATIENT_PROFILE_NOT_FOUND") {
         setProfile(null);
@@ -394,10 +466,14 @@ export default function PatientPortal() {
     setError("");
     try {
       const f = new FormData(e.currentTarget);
+      const deptId = String(f.get("departmentId") || "");
+      const dateVal = String(f.get("date") || "");
+      setSelectedDepartmentId(deptId);
+      setSelectedDate(dateVal);
       const results = await api(
-        `/api/v1/slots?departmentId=${encodeURIComponent(String(f.get("departmentId")))}&date=${encodeURIComponent(String(f.get("date")))}`,
+        `/api/v1/slots?departmentId=${encodeURIComponent(deptId)}&date=${encodeURIComponent(dateVal)}`,
       );
-      setSlots(results);
+      setSlots(results || []);
       setSearchedSlots(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load slots");
@@ -423,12 +499,21 @@ export default function PatientPortal() {
         method: "POST",
         body: JSON.stringify({ reservationId: reservation.reservationId }),
       });
+      // Immediately remove the booked slot from the available slots list
+      setSlots((current) =>
+        current.filter(
+          (candidate) =>
+            candidate.doctorId !== slot.doctorId ||
+            candidate.startsAt !== slot.startsAt,
+        ),
+      );
       setNotice(`Appointment ${appointment.appointmentNumber} confirmed.`);
       await openAppointments();
     } catch (e) {
       if (
-        e instanceof ApiError &&
-        ["SLOT_UNAVAILABLE", "SLOT_ALREADY_BOOKED"].includes(e.code || "")
+        (e instanceof ApiError &&
+          ["SLOT_UNAVAILABLE", "SLOT_ALREADY_BOOKED", "CONFLICT", "INVALID_APPOINTMENT_STATE"].includes(e.code || "")) ||
+        (e instanceof ApiError && e.status === 409)
       ) {
         setSlots((current) =>
           current.filter(
@@ -437,7 +522,10 @@ export default function PatientPortal() {
               candidate.startsAt !== slot.startsAt,
           ),
         );
-        setError("That time was just taken. Choose another available time.");
+        setError("Sorry, this appointment slot is no longer available. Please select another time.");
+        if (selectedDepartmentId && selectedDate) {
+          reloadAvailableSlots(selectedDepartmentId, selectedDate);
+        }
       } else if (e instanceof ApiError && e.code === "PATIENT_PROFILE_REQUIRED") {
         await openProfile();
         setError("Complete your patient profile before booking an appointment.");
@@ -532,8 +620,60 @@ export default function PatientPortal() {
       setCancelModalAppointment(null);
       setCancelReasonInput("");
       await openAppointments();
+      if (selectedDepartmentId && selectedDate) {
+        reloadAvailableSlots(selectedDepartmentId, selectedDate);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Cancellation failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function openRescheduleModal(appt: Appointment) {
+    setRescheduleModalAppointment(appt);
+    setSelectedRescheduleSlot(null);
+    setRescheduleReason("");
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateStr = tomorrow.toISOString().split("T")[0];
+    setRescheduleDate(dateStr);
+    await loadRescheduleSlots(appt.doctorId, dateStr);
+  }
+
+  async function loadRescheduleSlots(doctorId?: string, date?: string) {
+    if (!doctorId || !date) return;
+    setLoadingRescheduleSlots(true);
+    setSelectedRescheduleSlot(null);
+    try {
+      const data = await api(`/api/v1/slots?doctorId=${doctorId}&date=${date}`);
+      setRescheduleSlots(data || []);
+    } catch (e) {
+      setRescheduleSlots([]);
+      setError(e instanceof Error ? e.message : "Could not load available slots");
+    } finally {
+      setLoadingRescheduleSlots(false);
+    }
+  }
+
+  async function confirmReschedule() {
+    if (!rescheduleModalAppointment || !selectedRescheduleSlot) return;
+    setBusy(true);
+    setError("");
+    try {
+      await api(`/api/v1/appointments/${rescheduleModalAppointment.appointmentId}/reschedule`, {
+        method: "POST",
+        body: JSON.stringify({
+          doctorId: selectedRescheduleSlot.doctorId,
+          startsAt: selectedRescheduleSlot.startsAt,
+          reason: rescheduleReason.trim() || undefined,
+        }),
+      });
+      setNotice(`Appointment rescheduled successfully to ${new Date(selectedRescheduleSlot.startsAt).toLocaleString()}!`);
+      setRescheduleModalAppointment(null);
+      await openAppointments();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to reschedule appointment");
     } finally {
       setBusy(false);
     }
@@ -616,10 +756,12 @@ export default function PatientPortal() {
     }));
   }, [slots]);
 
-  const patientDisplayName =
+  const rawPatientName =
     profile?.fullName ||
     userAccount?.fullName ||
     (userAccount?.email ? userAccount.email.split("@")[0] : "Mary");
+
+  const patientDisplayName = getLocalizedDisplayName(rawPatientName, lang);
 
   return (
     <div className="saas-portal-wrapper">
@@ -642,101 +784,91 @@ export default function PatientPortal() {
         }}
       />
 
-      {/* 2. SUB-HEADER / BREADCRUMB BAR (WITH HAMBURGER AT LEFT) */}
-      <div className="saas-sub-header">
-        <button
-          type="button"
-          className="hamburger-toggle-btn"
-          aria-label={sidebarOpen ? "Close navigation menu" : "Open navigation menu"}
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-        >
-          <Menu size={18} />
-        </button>
-
-        <nav className="saas-breadcrumb" aria-label="Breadcrumb">
-          <Link href="/" className="saas-breadcrumb-item">
-            <Home size={15} />
-            <span>{t.home}</span>
-          </Link>
-          <ChevronRight size={14} className="saas-breadcrumb-chevron" />
-          <span className="saas-breadcrumb-active">{t.patientPortal}</span>
-          {view !== "home" && (
-            <>
-              <ChevronRight size={14} className="saas-breadcrumb-chevron" />
-              <span className="saas-breadcrumb-active" style={{ textTransform: "capitalize" }}>
-                {t[view as keyof typeof t] || view}
-              </span>
-            </>
-          )}
-        </nav>
-      </div>
-
-      {/* 3. MAIN PORTAL LAYOUT */}
+      {/* 2. MAIN PORTAL LAYOUT */}
       <div className="saas-patient-layout">
         {/* LEFT SIDEBAR */}
         <aside className={`saas-sidebar ${sidebarOpen ? "" : "collapsed"}`}>
           <div className="sidebar-nav-list">
-            <button
-              className={`sidebar-nav-item ${view === "home" ? "active" : ""}`}
-              onClick={() => setView("home")}
-            >
-              <Home size={18} />
-              <span>{t.home}</span>
-            </button>
+            {/* HOME ROW WITH INLINE COMPACT HAMBURGER TOGGLE AT FAR RIGHT */}
+            <div className="sidebar-home-row">
+              <button
+                className={`sidebar-nav-item sidebar-home-btn ${view === "home" ? "active" : ""}`}
+                onClick={() => setView("home")}
+                title={t.home}
+              >
+                <Home size={18} />
+                <span className="nav-label">{t.home}</span>
+              </button>
+              <button
+                type="button"
+                className="sidebar-toggle-inline-btn"
+                aria-label={sidebarOpen ? "Collapse navigation menu" : "Expand navigation menu"}
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+              >
+                <Menu size={15} color="#A67C52" />
+              </button>
+            </div>
 
             <button
               className={`sidebar-nav-item ${view === "profile" ? "active" : ""}`}
               onClick={openProfile}
+              title={t.profile}
             >
               <User size={18} />
-              <span>{t.profile}</span>
+              <span className="nav-label">{t.profile}</span>
             </button>
 
             <button
               className={`sidebar-nav-item ${view === "book" ? "active" : ""}`}
               onClick={openBooking}
+              title={t.bookAppointment}
             >
               <CalendarPlus size={18} />
-              <span>{t.bookAppointment}</span>
+              <span className="nav-label">{t.bookAppointment}</span>
             </button>
 
             <button
               className={`sidebar-nav-item ${view === "appointments" ? "active" : ""}`}
               onClick={openAppointments}
+              title={t.appointments}
             >
               <Calendar size={18} />
-              <span>{t.appointments}</span>
+              <span className="nav-label">{t.appointments}</span>
             </button>
 
             <button
               className={`sidebar-nav-item ${view === "payments" ? "active" : ""}`}
               onClick={openPaymentsTab}
+              title={t.paymentsInvoices}
             >
               <CreditCard size={18} />
-              <span>{t.paymentsInvoices}</span>
+              <span className="nav-label">{t.paymentsInvoices}</span>
             </button>
 
             <button
               className={`sidebar-nav-item ${view === "prescriptions" ? "active" : ""}`}
               onClick={openPrescriptionsTab}
+              title={t.myPrescriptions}
             >
               <FileText size={18} />
-              <span>{t.myPrescriptions}</span>
+              <span className="nav-label">{t.myPrescriptions}</span>
             </button>
 
             <button
               className={`sidebar-nav-item ${view === "settings" ? "active" : ""}`}
               onClick={() => setView("settings")}
+              title={t.settings}
             >
               <SettingsIcon size={18} />
-              <span>{t.settings}</span>
+              <span className="nav-label">{t.settings}</span>
             </button>
 
             <div className="sidebar-divider" />
 
-            <button className="sidebar-nav-item sidebar-signout-item" onClick={logout}>
+            <button className="sidebar-nav-item sidebar-signout-item" onClick={logout} title={t.signOut}>
               <LogOut size={18} />
-              <span>{t.signOut}</span>
+              <span className="nav-label">{t.signOut}</span>
             </button>
           </div>
 
@@ -804,46 +936,49 @@ export default function PatientPortal() {
                   {/* 1. HERO SECTION */}
                   <div className="saas-hero-card">
                     <div className="hero-left-content">
-                      <span className="eyebrow-badge">GOOD HEALTH, BRIGHTER TOMORROW</span>
+                      <span className="eyebrow-badge">{t.goodHealthTag}</span>
                       <h1 className="hero-main-title">
-                        Your care,<br />
-                        <span className="title-accent-blue">organized.</span>
+                        {t.yourCare}<br />
+                        <span className="title-accent-blue">{t.organized}</span>
                       </h1>
                       <p className="hero-welcome-text">
-                        Welcome back, {patientDisplayName}!
+                        {t.welcomeUser ? t.welcomeUser.replace("{name}", patientDisplayName) : `Welcome back, ${patientDisplayName}!`}
                       </p>
                       <p className="hero-subtext-desc">
-                        Stay on top of your appointments, prescriptions, health records and payments — all in one secure place.
+                        {t.stayOnTopDesc}
                       </p>
                     </div>
 
                     <div className="hero-right-content desktop-only">
                       <div className="hero-patient-illustration">
                         <div className="hero-patient-artwork">
-                          <div className="patient-avatar-large">
-                            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#1689D8" strokeWidth="1.5">
-                              <path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1" />
-                            </svg>
+                          <div className="patient-avatar-large" style={{ overflow: "hidden", padding: "4px" }}>
+                            <img
+                              src="/cream_3d_heart.jpg"
+                              alt="3D Anatomical Heart"
+                              className="heart-beat-anim"
+                              style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+                            />
                           </div>
-                          <div className="hero-script-tag">Small Steps Healthier You ♡</div>
+                          <div className="hero-script-tag">{t.smallSteps}</div>
                         </div>
                       </div>
 
                       <div className="hero-security-card">
                         <div className="security-icon-badge">
-                          <ShieldCheck size={22} color="#1689D8" />
+                          <ShieldCheck size={22} color="#A67C52" />
                         </div>
                         <div className="security-card-content">
-                          <h4 className="security-card-title">Your health data is safe with us</h4>
+                          <h4 className="security-card-title">{t.healthDataSafeTitle}</h4>
                           <p className="security-card-subtext">
-                            We use industry-standard security to protect your personal information.
+                            {t.healthDataSafeDesc}
                           </p>
                           <button
                             type="button"
                             className="security-learn-more-btn"
                             onClick={() => setNotice("Your health data is protected with 256-bit HIPAA compliant encryption.")}
                           >
-                            Learn more →
+                            {t.learnMore}
                           </button>
                         </div>
                       </div>
@@ -859,9 +994,9 @@ export default function PatientPortal() {
                     <div className="awareness-header">
                       <div className="awareness-header-left">
                         <div className="megaphone-badge-icon">
-                          <Megaphone size={18} color="#1689D8" />
+                          <Megaphone size={18} color="#A67C52" />
                         </div>
-                        <h2 className="awareness-section-title">Health Awareness & Special Days</h2>
+                        <h2 className="awareness-section-title">{t.healthAwarenessSectionTitle}</h2>
                       </div>
                       <div className="awareness-header-right">
                         <span className="slide-counter-badge">
@@ -912,8 +1047,18 @@ export default function PatientPortal() {
 
                       <div className="awareness-slide-center desktop-only">
                         <div className="campaign-heart-illustration">
-                          <div className="stethoscope-heart-wrapper">
-                            <Heart size={64} fill="#EF4444" color="#DC2626" />
+                          <div className="stethoscope-heart-wrapper" style={{ width: "110px", height: "110px", borderRadius: "20px", overflow: "hidden" }}>
+                            <img
+                              src="/cream_3d_heart.jpg"
+                              alt="3D Anatomical Heart"
+                              className="heart-beat-anim"
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                filter: "drop-shadow(0 6px 14px rgba(166, 124, 82, 0.2))",
+                              }}
+                            />
                           </div>
                           <div className="campaign-badge-text">
                             {awarenessCampaigns[awarenessSlide].badgeText}
@@ -926,9 +1071,9 @@ export default function PatientPortal() {
                           {awarenessCampaigns[awarenessSlide].tips.map((tip, idx) => (
                             <div key={idx} className="tip-item-row">
                               <div className="tip-icon-badge">
-                                {tip.icon === "heart" && <Heart size={16} color="#1689D8" />}
-                                {tip.icon === "utensils" && <Utensils size={16} color="#1689D8" />}
-                                {tip.icon === "activity" && <Activity size={16} color="#1689D8" />}
+                                {tip.icon === "heart" && <Heart size={16} color="#A67C52" />}
+                                {tip.icon === "utensils" && <Utensils size={16} color="#A67C52" />}
+                                {tip.icon === "activity" && <Activity size={16} color="#A67C52" />}
                               </div>
                               <div>
                                 <h4 className="tip-title">{tip.title}</h4>
@@ -961,16 +1106,16 @@ export default function PatientPortal() {
                       <div className="dash-card-header">
                         <div className="dash-card-title-group">
                           <div className="dash-card-icon-box">
-                            <Calendar size={18} color="#1689D8" />
+                            <Calendar size={18} color="#A67C52" />
                           </div>
-                          <h3 className="dash-card-heading">Upcoming Appointment</h3>
+                          <h3 className="dash-card-heading">{t.upcomingAppointments}</h3>
                         </div>
                         <button
                           type="button"
                           className="view-all-link-btn"
                           onClick={openAppointments}
                         >
-                          View all →
+                          {t.viewAll}
                         </button>
                       </div>
 
@@ -979,78 +1124,70 @@ export default function PatientPortal() {
                           <div className="doctor-profile-block">
                             <div className="doctor-info-header">
                               <div className="doc-avatar-img">
-                                <User size={24} color="#1689D8" />
+                                <User size={24} color="#A67C52" />
                               </div>
                               <div>
-                                <h4 className="doc-name">{appointments[0].doctorName || "Dr. Anitha Kumar"}</h4>
-                                <p className="doc-spec">{appointments[0].doctorSpecialization || "Cardiology • MBBS, MD"}</p>
+                                <h4 className="doc-name">{getLocalizedDisplayName(appointments[0].doctorName || t.doctor || "Doctor", lang)}</h4>
+                                <p className="doc-spec">{appointments[0].doctorSpecialization || "General Medicine"}</p>
                               </div>
                               <span className="status-confirmed-chip">
-                                {appointments[0].status || "Confirmed"}
+                                {appointments[0].status || t.statusConfirmed}
                               </span>
                             </div>
 
                             <div className="appt-details-rows">
                               <div className="appt-detail-badge">
-                                <Calendar size={14} color="#1689D8" />
-                                <span>{new Date(appointments[0].startsAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                                <Calendar size={14} color="#A67C52" />
+                                <span>{new Date(appointments[0].startsAt).toLocaleDateString(lang === "ta" ? "ta-IN" : lang === "hi" ? "hi-IN" : "en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
                               </div>
                               <div className="appt-detail-badge">
-                                <Clock size={14} color="#1689D8" />
-                                <span>{new Date(appointments[0].startsAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</span>
+                                <Clock size={14} color="#A67C52" />
+                                <span>{new Date(appointments[0].startsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                               </div>
                               <div className="appt-detail-badge full-width">
-                                <MapPin size={14} color="#1689D8" />
-                                <span>City Care Hospital • Cardiology Department</span>
+                                <MapPin size={14} color="#A67C52" />
+                                <span>City Care Hospital • {appointments[0].doctorSpecialization || "OPD"}</span>
                               </div>
+                            </div>
+
+                            <div className="appt-action-buttons">
+                              <button
+                                type="button"
+                                className="primary-blue-btn"
+                                onClick={openAppointments}
+                              >
+                                {t.viewAll}
+                              </button>
+                              <button
+                                type="button"
+                                className="outline-blue-btn"
+                                onClick={() => setNotice("Appointment added to your calendar.")}
+                              >
+                                <Calendar size={15} /> {t.addToCalendar}
+                              </button>
                             </div>
                           </div>
                         ) : (
-                          <div className="doctor-profile-block">
-                            <div className="doctor-info-header">
-                              <div className="doc-avatar-img">
-                                <User size={24} color="#1689D8" />
-                              </div>
-                              <div>
-                                <h4 className="doc-name">Dr. Anitha Kumar</h4>
-                                <p className="doc-spec">Cardiology • MBBS, MD</p>
-                              </div>
-                              <span className="status-confirmed-chip">Confirmed</span>
+                          <div className="no-appt-block" style={{ padding: "12px 0 6px 0", textAlign: "center" }}>
+                            <div className="doc-avatar-img" style={{ margin: "0 auto 10px auto", width: "42px", height: "42px", borderRadius: "50%", background: "#F7F1E8", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              <Calendar size={22} color="#A67C52" />
                             </div>
-
-                            <div className="appt-details-rows">
-                              <div className="appt-detail-badge">
-                                <Calendar size={14} color="#1689D8" />
-                                <span>Sep 15, 2026</span>
-                              </div>
-                              <div className="appt-detail-badge">
-                                <Clock size={14} color="#1689D8" />
-                                <span>10:30 AM</span>
-                              </div>
-                              <div className="appt-detail-badge full-width">
-                                <MapPin size={14} color="#1689D8" />
-                                <span>City Care Hospital • Cardiology Department</span>
-                              </div>
-                            </div>
+                            <h4 style={{ margin: "0 0 4px 0", color: "#302820", fontSize: "15px", fontWeight: 600 }}>
+                              {t.noUpcomingAppointmentsTitle}
+                            </h4>
+                            <p style={{ margin: "0 0 14px 0", color: "#76685B", fontSize: "13px" }}>
+                              {t.noUpcomingAppointmentsSub}
+                            </p>
+                            <button
+                              type="button"
+                              className="primary-blue-btn"
+                              onClick={() => { setError(""); setView("book"); }}
+                              style={{ width: "100%", justifyContent: "center" }}
+                            >
+                              + {t.bookNewAppointmentBtn}
+                            </button>
                           </div>
                         )}
-
-                        <div className="appt-action-buttons">
-                          <button
-                            type="button"
-                            className="primary-blue-btn"
-                            onClick={openAppointments}
-                          >
-                            View Details →
-                          </button>
-                          <button
-                            type="button"
-                            className="outline-blue-btn"
-                            onClick={() => setNotice("Appointment added to your calendar.")}
-                          >
-                            <Calendar size={15} /> Add to Calendar
-                          </button>
-                        </div>
                       </div>
                     </div>
 
@@ -1059,28 +1196,32 @@ export default function PatientPortal() {
                       <div className="dash-card-header">
                         <div className="dash-card-title-group">
                           <div className="dash-card-icon-box">
-                            <FileText size={18} color="#1689D8" />
+                            <FileText size={18} color="#A67C52" />
                           </div>
-                          <h3 className="dash-card-heading">My Prescriptions</h3>
+                          <h3 className="dash-card-heading">{t.activePrescriptionsHeading}</h3>
                         </div>
                         <button
                           type="button"
                           className="view-all-link-btn"
                           onClick={openPrescriptionsTab}
                         >
-                          View all →
+                          {t.viewAll}
                         </button>
                       </div>
 
                       <div className="dash-card-body stat-body">
                         <div className="stat-main-row">
                           <div className="stat-circle-icon">
-                            <Pill size={28} color="#1689D8" />
+                            <Pill size={28} color="#A67C52" />
                           </div>
                           <div>
-                            <div className="stat-big-number">{prescriptions.length || 3}</div>
-                            <div className="stat-label">Active prescriptions</div>
-                            <div className="stat-subtext">Last updated Sep 5, 2026</div>
+                            <div className="stat-big-number">{prescriptions.length}</div>
+                            <div className="stat-label">{t.activePrescriptionsLabel}</div>
+                            <div className="stat-subtext">
+                              {prescriptions.length > 0
+                                ? `${t.lastUpdated} ${new Date(prescriptions[0].issuedAt || prescriptions[0].createdAt || Date.now()).toLocaleDateString(lang === "ta" ? "ta-IN" : lang === "hi" ? "hi-IN" : "en-US", { month: "short", day: "numeric", year: "numeric" })}`
+                                : t.noPrescriptionsYetShort}
+                            </div>
                           </div>
                         </div>
 
@@ -1089,7 +1230,7 @@ export default function PatientPortal() {
                           className="soft-blue-action-btn"
                           onClick={openPrescriptionsTab}
                         >
-                          View Prescriptions →
+                          {t.viewPrescriptionsBtn}
                         </button>
                       </div>
                     </div>
@@ -1099,37 +1240,41 @@ export default function PatientPortal() {
                       <div className="dash-card-header">
                         <div className="dash-card-title-group">
                           <div className="dash-card-icon-box">
-                            <Folder size={18} color="#1689D8" />
+                            <Folder size={18} color="#A67C52" />
                           </div>
-                          <h3 className="dash-card-heading">Health Records</h3>
+                          <h3 className="dash-card-heading">{t.healthRecordsHeading}</h3>
                         </div>
                         <button
                           type="button"
                           className="view-all-link-btn"
-                          onClick={() => setNotice("Health records section loaded.")}
+                          onClick={openPrescriptionsTab}
                         >
-                          View all →
+                          {t.viewAll}
                         </button>
                       </div>
 
                       <div className="dash-card-body stat-body">
                         <div className="stat-main-row">
                           <div className="stat-circle-icon">
-                            <FileText size={28} color="#1689D8" />
+                            <FileText size={28} color="#A67C52" />
                           </div>
                           <div>
-                            <div className="stat-big-number">6</div>
-                            <div className="stat-label">Records available</div>
-                            <div className="stat-subtext">Lab reports, prescriptions, and consultation notes.</div>
+                            <div className="stat-big-number">{prescriptions.length}</div>
+                            <div className="stat-label">{t.digitalConsultationNotes}</div>
+                            <div className="stat-subtext">
+                              {prescriptions.length > 0
+                                ? t.verifiedByHospital
+                                : t.noHealthRecordsYet}
+                            </div>
                           </div>
                         </div>
 
                         <button
                           type="button"
                           className="soft-blue-action-btn"
-                          onClick={() => setNotice("Health records download starting...")}
+                          onClick={openPrescriptionsTab}
                         >
-                          View Records →
+                          {t.viewRecordsBtn}
                         </button>
                       </div>
                     </div>
@@ -1137,46 +1282,46 @@ export default function PatientPortal() {
 
                   {/* 4. CARE JOURNEY */}
                   <div className="saas-care-journey-card">
-                    <h3 className="care-journey-title">Your Care Journey</h3>
+                    <h3 className="care-journey-title">{t.careJourneyTitle}</h3>
                     <div className="journey-timeline-row">
                       <div className="journey-step-item completed">
                         <div className="step-circle">
-                          <User size={16} color="#1689D8" />
+                          <User size={16} color="#A67C52" />
                         </div>
-                        <div className="step-label">Profile</div>
-                        <div className="step-status">Completed</div>
+                        <div className="step-label">{t.stepProfileSetup}</div>
+                        <div className="step-status">{t.statusCompleted}</div>
                       </div>
                       <div className="journey-line completed" />
                       <div className="journey-step-item completed">
                         <div className="step-circle">
-                          <Calendar size={16} color="#1689D8" />
+                          <Calendar size={16} color="#A67C52" />
                         </div>
-                        <div className="step-label">Appointment</div>
-                        <div className="step-status">Booked</div>
+                        <div className="step-label">{t.stepSlotSelection}</div>
+                        <div className="step-status">{t.statusConfirmed}</div>
                       </div>
                       <div className="journey-line completed" />
                       <div className="journey-step-item active">
                         <div className="step-circle">
-                          <CheckCircle size={16} color="#1689D8" />
+                          <CheckCircle size={16} color="#A67C52" />
                         </div>
-                        <div className="step-label">Consultation</div>
-                        <div className="step-status">Completed</div>
+                        <div className="step-label">{t.stepDoctorConsultation}</div>
+                        <div className="step-status">{t.statusCompleted}</div>
                       </div>
                       <div className="journey-line" />
                       <div className="journey-step-item">
                         <div className="step-circle">
-                          <Pill size={16} color="#1689D8" />
+                          <Pill size={16} color="#A67C52" />
                         </div>
-                        <div className="step-label">Prescription</div>
-                        <div className="step-status">Available</div>
+                        <div className="step-label">{t.stepDigitalPrescription}</div>
+                        <div className="step-status">{t.statusConfirmed}</div>
                       </div>
                       <div className="journey-line" />
                       <div className="journey-step-item">
                         <div className="step-circle">
-                          <CreditCard size={16} color="#1689D8" />
+                          <CreditCard size={16} color="#A67C52" />
                         </div>
-                        <div className="step-label">Payment</div>
-                        <div className="step-status">Completed</div>
+                        <div className="step-label">{t.stepPaymentReceipt}</div>
+                        <div className="step-status">{t.statusCompleted}</div>
                       </div>
                     </div>
                   </div>
@@ -1311,8 +1456,8 @@ export default function PatientPortal() {
                     />
                   </label>
                   <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
-                    <button disabled={busy} className="primary-btn" style={{ background: "#065f46", color: "#fff", border: "none", padding: "10px 20px", borderRadius: "8px", fontWeight: "700", cursor: "pointer" }}>{t.saveProfile}</button>
-                    <button type="button" onClick={() => setView("home")} style={{ background: "#f1f5f9", color: "#475569", border: "1px solid #cbd5e1", padding: "10px 20px", borderRadius: "8px", fontWeight: "600", cursor: "pointer" }}>{t.backToOverview}</button>
+                    <button disabled={busy} className="primary-btn" style={{ background: "#A67C52", color: "#fff", border: "none", padding: "10px 20px", borderRadius: "8px", fontWeight: "700", cursor: "pointer" }}>{t.saveProfile}</button>
+                    <button type="button" onClick={() => setView("home")} style={{ background: "#F7F1E8", color: "#3D3228", border: "1px solid #E7DED2", padding: "10px 20px", borderRadius: "8px", fontWeight: "600", cursor: "pointer" }}>{t.backToOverview}</button>
                   </div>
                 </form>
               )}
@@ -1320,53 +1465,53 @@ export default function PatientPortal() {
               {/* SETTINGS SUB-VIEW */}
               {view === "settings" && (
                 <div className="card form wide-form">
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px", borderBottom: "1px solid #e2e8f0", paddingBottom: "16px", marginBottom: "20px" }}>
-                    <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "#ecfdf5", color: "#047857", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", borderBottom: "1px solid #E7DED2", paddingBottom: "16px", marginBottom: "20px" }}>
+                    <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "#F7F1E8", color: "#A67C52", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <SettingsIcon size={22} />
                     </div>
                     <div>
-                      <h2 style={{ margin: 0, fontSize: "1.3rem", fontWeight: "800", color: "#0f172a" }}>{t.accountPortalSettings}</h2>
-                      <p style={{ margin: "2px 0 0 0", fontSize: "0.85rem", color: "#64748b" }}>{t.manageSettingsDesc}</p>
+                      <h2 style={{ margin: 0, fontSize: "1.3rem", fontWeight: "800", color: "#3D3228" }}>{t.accountPortalSettings}</h2>
+                      <p style={{ margin: "2px 0 0 0", fontSize: "0.85rem", color: "#76685B" }}>{t.manageSettingsDesc}</p>
                     </div>
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
                     {/* 1. NOTIFICATION PREFERENCES */}
-                    <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "20px" }}>
+                    <div style={{ background: "#FAF8F4", border: "1px solid #E7DED2", borderRadius: "14px", padding: "20px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-                        <Bell size={18} color="#059669" />
-                        <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "700", color: "#0f172a" }}>{t.notificationPreferences}</h3>
+                        <Bell size={18} color="#A67C52" />
+                        <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "700", color: "#3D3228" }}>{t.notificationPreferences}</h3>
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                        <label style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "0.9rem", color: "#334155", cursor: "pointer" }}>
-                          <input type="checkbox" defaultChecked onChange={(e) => setNotice(e.target.checked ? "SMS appointment reminders enabled." : "SMS appointment reminders disabled.")} style={{ width: "18px", height: "18px", accentColor: "#059669" }} />
+                        <label style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "0.9rem", color: "#3D3228", cursor: "pointer" }}>
+                          <input type="checkbox" defaultChecked onChange={(e) => setNotice(e.target.checked ? "SMS appointment reminders enabled." : "SMS appointment reminders disabled.")} style={{ width: "18px", height: "18px", accentColor: "#A67C52" }} />
                           <div>
                             <strong>{t.smsReminders}</strong>
-                            <div style={{ fontSize: "0.78rem", color: "#64748b" }}>{t.smsRemindersDesc}</div>
+                            <div style={{ fontSize: "0.78rem", color: "#76685B" }}>{t.smsRemindersDesc}</div>
                           </div>
                         </label>
-                        <label style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "0.9rem", color: "#334155", cursor: "pointer" }}>
-                          <input type="checkbox" defaultChecked onChange={(e) => setNotice(e.target.checked ? "Email receipts enabled." : "Email receipts disabled.")} style={{ width: "18px", height: "18px", accentColor: "#059669" }} />
+                        <label style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "0.9rem", color: "#3D3228", cursor: "pointer" }}>
+                          <input type="checkbox" defaultChecked onChange={(e) => setNotice(e.target.checked ? "Email receipts enabled." : "Email receipts disabled.")} style={{ width: "18px", height: "18px", accentColor: "#A67C52" }} />
                           <div>
                             <strong>{t.emailReceipts}</strong>
-                            <div style={{ fontSize: "0.78rem", color: "#64748b" }}>{t.emailReceiptsDesc}</div>
+                            <div style={{ fontSize: "0.78rem", color: "#76685B" }}>{t.emailReceiptsDesc}</div>
                           </div>
                         </label>
-                        <label style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "0.9rem", color: "#334155", cursor: "pointer" }}>
-                          <input type="checkbox" defaultChecked onChange={(e) => setNotice(e.target.checked ? "Digital prescription alerts enabled." : "Digital prescription alerts disabled.")} style={{ width: "18px", height: "18px", accentColor: "#059669" }} />
+                        <label style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "0.9rem", color: "#3D3228", cursor: "pointer" }}>
+                          <input type="checkbox" defaultChecked onChange={(e) => setNotice(e.target.checked ? "Digital prescription alerts enabled." : "Digital prescription alerts disabled.")} style={{ width: "18px", height: "18px", accentColor: "#A67C52" }} />
                           <div>
                             <strong>{t.prescriptionAlerts}</strong>
-                            <div style={{ fontSize: "0.78rem", color: "#64748b" }}>{t.prescriptionAlertsDesc}</div>
+                            <div style={{ fontSize: "0.78rem", color: "#76685B" }}>{t.prescriptionAlertsDesc}</div>
                           </div>
                         </label>
                       </div>
                     </div>
 
                     {/* 2. SECURITY & PASSWORD MANAGEMENT */}
-                    <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "20px" }}>
+                    <div style={{ background: "#FAF8F4", border: "1px solid #E7DED2", borderRadius: "14px", padding: "20px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-                        <Key size={18} color="#059669" />
-                        <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "700", color: "#0f172a" }}>{t.securityCredentials}</h3>
+                        <Key size={18} color="#A67C52" />
+                        <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "700", color: "#3D3228" }}>{t.securityCredentials}</h3>
                       </div>
                       <form onSubmit={(e) => {
                         e.preventDefault();
@@ -1382,17 +1527,17 @@ export default function PatientPortal() {
                             <input type="password" minLength={12} placeholder="••••••••••••" required />
                           </label>
                         </div>
-                        <button type="submit" style={{ alignSelf: "flex-start", background: "#065f46", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: "700", cursor: "pointer" }}>
+                        <button type="submit" style={{ alignSelf: "flex-start", background: "#A67C52", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: "700", cursor: "pointer" }}>
                           {t.updatePassword}
                         </button>
                       </form>
                     </div>
 
                     {/* 3. PORTAL REGIONAL PREFERENCES */}
-                    <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "20px" }}>
+                    <div style={{ background: "#FAF8F4", border: "1px solid #E7DED2", borderRadius: "14px", padding: "20px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-                        <Globe size={18} color="#059669" />
-                        <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "700", color: "#0f172a" }}>{t.portalRegionalPreferences}</h3>
+                        <Globe size={18} color="#A67C52" />
+                        <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "700", color: "#3D3228" }}>{t.portalRegionalPreferences}</h3>
                       </div>
                       <div className="form-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
                         <label>
@@ -1405,7 +1550,6 @@ export default function PatientPortal() {
                             <option value="en">English</option>
                             <option value="hi">Hindi (हिंदी)</option>
                             <option value="ta">Tamil (தமிழ்)</option>
-                            <option value="es">Spanish (Español)</option>
                           </select>
                         </label>
                         <label>
@@ -1424,8 +1568,8 @@ export default function PatientPortal() {
                   </div>
 
                   <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
-                    <button type="button" onClick={() => setNotice("Settings & portal preferences saved successfully.")} style={{ background: "#065f46", color: "#fff", border: "none", padding: "10px 20px", borderRadius: "8px", fontWeight: "700", cursor: "pointer" }}>{t.saveAllSettings}</button>
-                    <button type="button" onClick={() => setView("home")} style={{ background: "#f1f5f9", color: "#475569", border: "1px solid #cbd5e1", padding: "10px 20px", borderRadius: "8px", fontWeight: "600", cursor: "pointer" }}>{t.backToOverview}</button>
+                    <button type="button" onClick={() => setNotice("Settings & portal preferences saved successfully.")} style={{ background: "#A67C52", color: "#fff", border: "none", padding: "10px 20px", borderRadius: "8px", fontWeight: "700", cursor: "pointer" }}>{t.saveAllSettings}</button>
+                    <button type="button" onClick={() => setView("home")} style={{ background: "#F7F1E8", color: "#3D3228", border: "1px solid #E7DED2", padding: "10px 20px", borderRadius: "8px", fontWeight: "600", cursor: "pointer" }}>{t.backToOverview}</button>
                   </div>
                 </div>
               )}
@@ -1450,14 +1594,22 @@ export default function PatientPortal() {
                       maxWidth: "100%"
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.88rem", fontWeight: 700, color: "#065f46", whiteSpace: "nowrap", paddingRight: "4px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.88rem", fontWeight: 700, color: "#A67C52", whiteSpace: "nowrap", paddingRight: "4px" }}>
                       <span>🔍</span>
                       <span>{t.findAppointment}</span>
                     </div>
 
                     <select
                       name="departmentId"
-                      defaultValue=""
+                      value={selectedDepartmentId}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedDepartmentId(val);
+                        if (val && selectedDate) {
+                          reloadAvailableSlots(val, selectedDate);
+                          setSearchedSlots(true);
+                        }
+                      }}
                       required
                       aria-label={t.department}
                       style={{
@@ -1483,7 +1635,15 @@ export default function PatientPortal() {
                     <input
                       name="date"
                       type="date"
-                      defaultValue={new Date().toISOString().slice(0, 10)}
+                      value={selectedDate}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedDate(val);
+                        if (selectedDepartmentId && val) {
+                          reloadAvailableSlots(selectedDepartmentId, val);
+                          setSearchedSlots(true);
+                        }
+                      }}
                       min={new Date().toISOString().slice(0, 10)}
                       required
                       aria-label={t.date}
@@ -1508,7 +1668,7 @@ export default function PatientPortal() {
                         padding: "0 14px",
                         borderRadius: "6px",
                         border: "none",
-                        background: "#065f46",
+                        background: "#A67C52",
                         color: "#fff",
                         fontWeight: 600,
                         fontSize: "0.82rem",
@@ -1523,20 +1683,20 @@ export default function PatientPortal() {
                     {doctorAvailability.map((doctor) => (
                       <article className="card doctor-availability" key={doctor.doctorId}>
                         <header>
-                          <h3>{doctor.doctorName}</h3>
+                          <h3>{getLocalizedDisplayName(doctor.doctorName, lang)}</h3>
                           <p>{doctor.specialization}</p>
                         </header>
                         <p className="slot-count">
                           {doctor.slots.length} {t.availableTimes}
                         </p>
-                        <div className="time-slot-grid" aria-label={`Available times for ${doctor.doctorName}`}>
+                        <div className="time-slot-grid" aria-label={`Available times for ${getLocalizedDisplayName(doctor.doctorName, lang)}`}>
                           {doctor.slots.map((slot) => (
                             <button
                               type="button"
                               disabled={busy}
                               key={slot.startsAt}
                               onClick={() => book(slot)}
-                              aria-label={`Book ${doctor.doctorName} at ${new Date(slot.startsAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
+                              aria-label={`Book ${getLocalizedDisplayName(doctor.doctorName, lang)} at ${new Date(slot.startsAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
                             >
                               {new Date(slot.startsAt).toLocaleTimeString([], {
                                 hour: "numeric",
@@ -1568,16 +1728,17 @@ export default function PatientPortal() {
                   <h2 style={{ gridColumn: "1 / -1", marginTop: 0 }}>{t.myAppointments}</h2>
                   {appointments.map((a) => {
                     const pmt = payments.find((p) => p.appointmentId === a.appointmentId && p.status === "PAID");
-                    const docNameClean = a.doctorName
+                    const rawDoc = a.doctorName
                       ? a.doctorName.startsWith("Dr.") || a.doctorName.startsWith("Dr ")
                         ? a.doctorName
                         : `Dr. ${a.doctorName}`
                       : null;
+                    const docNameClean = rawDoc ? getLocalizedDisplayName(rawDoc, lang) : null;
                     return (
                       <article className="card" key={a.appointmentId}>
                         <h3>{a.appointmentNumber}</h3>
                         {docNameClean && (
-                          <div style={{ fontWeight: 600, color: "#0f766e", margin: "0.4rem 0", display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                          <div style={{ fontWeight: 600, color: "#A67C52", margin: "0.4rem 0", display: "flex", alignItems: "center", gap: "0.35rem" }}>
                             <span>🩺</span>
                             <span>{docNameClean} {a.doctorSpecialization ? `(${a.doctorSpecialization})` : ""}</span>
                           </div>
@@ -1589,13 +1750,24 @@ export default function PatientPortal() {
                           {t.statusLabel} <span className="status">{a.status}</span>
                         </p>
                         {a.status === "CANCELLED" && a.cancellationReason && (
-                          <div style={{ fontSize: "0.85rem", color: "#991b1b", marginTop: "0.4rem", background: "#fef2f2", padding: "6px 10px", borderRadius: "6px", border: "1px solid #fecaca" }}>
+                          <div style={{ fontSize: "0.85rem", color: "#3D3228", marginTop: "0.4rem", background: "#F7F1E8", padding: "6px 10px", borderRadius: "6px", border: "1px solid #E7DED2" }}>
                             <strong>Reason:</strong> {a.cancellationReason}
+                          </div>
+                        )}
+                        {a.status === "NO_SHOW" && (
+                          <div style={{ fontSize: "0.85rem", color: "#991b1b", marginTop: "0.4rem", background: "#fef2f2", padding: "8px 12px", borderRadius: "6px", border: "1px solid #fecaca", display: "flex", alignItems: "center", gap: "6px" }}>
+                            <span>⚠️</span>
+                            <span><strong>Missed Appointment:</strong> You were unable to attend this appointment. Reschedule it below.</span>
+                          </div>
+                        )}
+                        {a.status === "RESCHEDULED" && (
+                          <div style={{ fontSize: "0.85rem", color: "#166534", marginTop: "0.4rem", background: "#f0fdf4", padding: "6px 10px", borderRadius: "6px", border: "1px solid #dcfce7" }}>
+                            ✓ This appointment was rescheduled to a new slot.
                           </div>
                         )}
                         {pmt ? (
                           <div style={{ margin: "0.5rem 0" }}>
-                            <span className="status" style={{ background: "rgba(34,197,94,0.2)", color: "#16a34a" }}>
+                            <span className="status" style={{ background: "#F7F1E8", color: "#A67C52" }}>
                               {t.paidBadge} (₹{pmt.amountMinor / 100})
                             </span>
                             <button
@@ -1609,7 +1781,7 @@ export default function PatientPortal() {
                           a.status === "CONFIRMED" && (
                             <div style={{ margin: "0.5rem 0" }}>
                               <button
-                                style={{ background: "#2563eb", color: "#fff", border: "none", padding: "0.4rem 0.8rem", borderRadius: "6px", cursor: "pointer" }}
+                                style={{ background: "#A67C52", color: "#fff", border: "none", padding: "0.4rem 0.8rem", borderRadius: "6px", cursor: "pointer" }}
                                 onClick={() => setActivePaymentModal({ appointmentId: a.appointmentId, appointmentNumber: a.appointmentNumber })}
                               >
                                 {t.payNow}
@@ -1617,18 +1789,40 @@ export default function PatientPortal() {
                             </div>
                           )
                         )}
-                        {["REQUESTED", "CONFIRMED"].includes(a.status) && (
-                          <button
-                            className="destructive-action"
-                            disabled={busy}
-                            onClick={() => {
-                              setCancelModalAppointment({ id: a.appointmentId, number: a.appointmentNumber });
-                              setCancelReasonInput("");
-                            }}
-                          >
-                            {t.cancelAppointment}
-                          </button>
-                        )}
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.6rem" }}>
+                          {["REQUESTED", "CONFIRMED"].includes(a.status) && (
+                            <button
+                              className="destructive-action"
+                              disabled={busy}
+                              onClick={() => {
+                                setCancelModalAppointment({ id: a.appointmentId, number: a.appointmentNumber });
+                                setCancelReasonInput("");
+                              }}
+                            >
+                              {t.cancelAppointment}
+                            </button>
+                          )}
+                          {["CONFIRMED", "REQUESTED", "NO_SHOW", "CANCELLED", "CHECKED_IN"].includes(a.status) && (
+                            <button
+                              className="secondary-action"
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.4rem",
+                                padding: "0.45rem 0.9rem",
+                                fontWeight: 600,
+                                backgroundColor: a.status === "NO_SHOW" ? "#fef2f2" : undefined,
+                                borderColor: a.status === "NO_SHOW" ? "#ef4444" : undefined,
+                                color: a.status === "NO_SHOW" ? "#b91c1c" : undefined,
+                              }}
+                              disabled={busy}
+                              onClick={() => openRescheduleModal(a)}
+                            >
+                              <Clock size={15} />
+                              {a.status === "NO_SHOW" ? "Reschedule Missed Appointment" : "Reschedule"}
+                            </button>
+                          )}
+                        </div>
                       </article>
                     );
                   })}
@@ -1674,7 +1868,7 @@ export default function PatientPortal() {
                           {p.status}
                         </span>
                       </div>
-                      <p><strong>{t.doctor}</strong> Dr. {p.doctorName} ({p.departmentName})</p>
+                      <p><strong>{t.doctor}</strong> {getLocalizedDisplayName(p.doctorName ? `Dr. ${p.doctorName}` : "Dr. Anitha Kumar", lang)} ({p.departmentName})</p>
                       <p><strong>{t.diagnosis}</strong> {p.diagnosis || "General Consultation"}</p>
                       <p><small>{t.issuedOn} {new Date(p.createdAt).toLocaleString()}</small></p>
                       <p>{t.prescribedMedicines} <strong>{p.items?.length || 0}</strong></p>
@@ -1706,15 +1900,15 @@ export default function PatientPortal() {
             <div>{t.allRightsReserved}</div>
             <div className="footer-compliance-links">
               <span className="footer-link-item">
-                <ShieldCheck size={15} color="#059669" /> {t.hipaaCompliant}
+                <ShieldCheck size={15} color="#A67C52" /> {t.hipaaCompliant}
               </span>
               <span className="footer-divider-pipe">|</span>
               <span className="footer-link-item">
-                <Lock size={14} color="#059669" /> {t.encryption}
+                <Lock size={14} color="#A67C52" /> {t.encryption}
               </span>
               <span className="footer-divider-pipe">|</span>
               <span className="footer-link-item">
-                <Headphones size={15} color="#059669" /> {t.support247}
+                <Headphones size={15} color="#A67C52" /> {t.support247}
               </span>
             </div>
           </footer>
@@ -1724,14 +1918,14 @@ export default function PatientPortal() {
       {/* ENHANCED MULTI-GATEWAY CHECKOUT MODAL */}
       {activePaymentModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div className="card" style={{ maxWidth: "500px", width: "95%", background: "#ffffff", color: "#0f172a", padding: "1.75rem", borderRadius: "16px", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)" }}>
+          <div className="card" style={{ maxWidth: "500px", width: "95%", background: "#ffffff", color: "#3D3228", padding: "1.75rem", borderRadius: "16px", boxShadow: "0 20px 25px -5px rgba(61,50,40,0.1), 0 8px 10px -6px rgba(61,50,40,0.08)" }}>
             <h2 style={{ marginTop: 0, fontSize: "1.5rem", fontWeight: "700" }}>Payment Checkout</h2>
-            <p style={{ color: "#64748b", margin: "0.25rem 0 1rem 0" }}>Appointment: <strong>{activePaymentModal.appointmentNumber}</strong></p>
+            <p style={{ color: "#76685B", margin: "0.25rem 0 1rem 0" }}>Appointment: <strong>{activePaymentModal.appointmentNumber}</strong></p>
             
-            <div style={{ padding: "1rem", background: "#f8fafc", borderRadius: "12px", border: "1px solid #e2e8f0", marginBottom: "1.25rem" }}>
+            <div style={{ padding: "1rem", background: "#FAF8F4", borderRadius: "12px", border: "1px solid #E7DED2", marginBottom: "1.25rem" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ color: "#475569" }}>Total Amount Due:</span>
-                <strong style={{ fontSize: "1.4rem", color: "#0f172a" }}>₹1,000.00 INR</strong>
+                <span style={{ color: "#76685B" }}>Total Amount Due:</span>
+                <strong style={{ fontSize: "1.4rem", color: "#3D3228" }}>₹1,000.00 INR</strong>
               </div>
             </div>
 
@@ -1741,21 +1935,21 @@ export default function PatientPortal() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem" }}>
                 <button 
                   type="button" 
-                  style={{ background: selectedGateway === "MOCK" ? "#065f46" : "#f1f5f9", color: selectedGateway === "MOCK" ? "#fff" : "#334155", border: "1px solid #cbd5e1", borderRadius: "8px", padding: "0.5rem", fontSize: "0.875rem", cursor: "pointer" }}
+                  style={{ background: selectedGateway === "MOCK" ? "#A67C52" : "#F7F1E8", color: selectedGateway === "MOCK" ? "#fff" : "#3D3228", border: "1px solid #E7DED2", borderRadius: "8px", padding: "0.5rem", fontSize: "0.875rem", cursor: "pointer" }}
                   onClick={() => setSelectedGateway("MOCK")}
                 >
                   Mock (Demo)
                 </button>
                 <button 
                   type="button" 
-                  style={{ background: selectedGateway === "RAZORPAY" ? "#065f46" : "#f1f5f9", color: selectedGateway === "RAZORPAY" ? "#fff" : "#334155", border: "1px solid #cbd5e1", borderRadius: "8px", padding: "0.5rem", fontSize: "0.875rem", cursor: "pointer" }}
+                  style={{ background: selectedGateway === "RAZORPAY" ? "#A67C52" : "#F7F1E8", color: selectedGateway === "RAZORPAY" ? "#fff" : "#3D3228", border: "1px solid #E7DED2", borderRadius: "8px", padding: "0.5rem", fontSize: "0.875rem", cursor: "pointer" }}
                   onClick={() => setSelectedGateway("RAZORPAY")}
                 >
                   Razorpay
                 </button>
                 <button 
                   type="button" 
-                  style={{ background: selectedGateway === "STRIPE" ? "#065f46" : "#f1f5f9", color: selectedGateway === "STRIPE" ? "#fff" : "#334155", border: "1px solid #cbd5e1", borderRadius: "8px", padding: "0.5rem", fontSize: "0.875rem", cursor: "pointer" }}
+                  style={{ background: selectedGateway === "STRIPE" ? "#A67C52" : "#F7F1E8", color: selectedGateway === "STRIPE" ? "#fff" : "#3D3228", border: "1px solid #E7DED2", borderRadius: "8px", padding: "0.5rem", fontSize: "0.875rem", cursor: "pointer" }}
                   onClick={() => setSelectedGateway("STRIPE")}
                 >
                   Stripe
@@ -1771,7 +1965,7 @@ export default function PatientPortal() {
                   <button 
                     key={method} 
                     type="button"
-                    style={{ background: selectedMethod === method ? "#ecfdf5" : "#ffffff", color: selectedMethod === method ? "#047857" : "#475569", border: selectedMethod === method ? "2px solid #059669" : "1px solid #cbd5e1", borderRadius: "8px", padding: "0.5rem", fontSize: "0.8rem", textAlign: "center", cursor: "pointer" }}
+                    style={{ background: selectedMethod === method ? "#F7F1E8" : "#ffffff", color: selectedMethod === method ? "#A67C52" : "#3D3228", border: selectedMethod === method ? "2px solid #A67C52" : "1px solid #E7DED2", borderRadius: "8px", padding: "0.5rem", fontSize: "0.8rem", textAlign: "center", cursor: "pointer" }}
                     onClick={() => setSelectedMethod(method)}
                   >
                     {method.replace("_", " ")}
@@ -1930,7 +2124,7 @@ export default function PatientPortal() {
                 type="button"
                 onClick={() => downloadPrescriptionDoc(selectedPrescription.prescriptionId, selectedPrescription.prescriptionNumber)}
                 className="brand"
-                style={{ padding: "10px 20px", background: "#065f46", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer" }}
+                style={{ padding: "10px 20px", background: "#A67C52", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer" }}
               >
                 📥 Download / Print Document
               </button>
@@ -2029,6 +2223,214 @@ export default function PatientPortal() {
                 }}
               >
                 {busy ? "Cancelling..." : "Confirm Cancellation"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* RESCHEDULE APPOINTMENT MODAL */}
+      {rescheduleModalAppointment && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.65)",
+            backdropFilter: "blur(6px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: "16px"
+          }}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: "16px",
+              padding: "24px 28px",
+              maxWidth: "540px",
+              width: "100%",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+              border: "1px solid rgba(226, 232, 240, 0.8)"
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "1.4rem" }}>📅</span>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700, color: "#1e293b" }}>
+                    Reschedule Appointment
+                  </h3>
+                  <span style={{ fontSize: "0.85rem", color: "#64748b" }}>
+                    {rescheduleModalAppointment.appointmentNumber}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRescheduleModalAppointment(null)}
+                style={{ background: "transparent", border: "none", fontSize: "1.3rem", cursor: "pointer", color: "#64748b" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Current Appointment Snapshot */}
+            <div
+              style={{
+                background: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                borderRadius: "10px",
+                padding: "12px 14px",
+                marginBottom: "16px",
+                fontSize: "0.88rem"
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                <span style={{ color: "#64748b" }}>Doctor:</span>
+                <strong style={{ color: "#0f172a" }}>
+                  {rescheduleModalAppointment.doctorName || "Assigned Doctor"}{" "}
+                  {rescheduleModalAppointment.doctorSpecialization ? `(${rescheduleModalAppointment.doctorSpecialization})` : ""}
+                </strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                <span style={{ color: "#64748b" }}>Original Scheduled Time:</span>
+                <span style={{ color: "#334155" }}>
+                  {new Date(rescheduleModalAppointment.startsAt).toLocaleString()}
+                </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "#64748b" }}>Current Status:</span>
+                <span className="status" style={{ fontSize: "0.75rem", padding: "2px 8px" }}>
+                  {rescheduleModalAppointment.status}
+                </span>
+              </div>
+            </div>
+
+            {/* Date Picker */}
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ display: "block", fontSize: "0.88rem", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>
+                Select New Appointment Date
+              </label>
+              <input
+                type="date"
+                min={new Date().toISOString().split("T")[0]}
+                value={rescheduleDate}
+                onChange={(e) => {
+                  setRescheduleDate(e.target.value);
+                  loadRescheduleSlots(rescheduleModalAppointment.doctorId, e.target.value);
+                }}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e1",
+                  fontSize: "0.95rem",
+                  fontFamily: "inherit"
+                }}
+              />
+            </div>
+
+            {/* Available Time Slots Grid */}
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ display: "block", fontSize: "0.88rem", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>
+                Available Time Slots
+              </label>
+              {loadingRescheduleSlots ? (
+                <div style={{ textAlign: "center", padding: "20px", color: "#64748b", fontSize: "0.9rem" }}>
+                  Loading available slots...
+                </div>
+              ) : rescheduleSlots.length === 0 ? (
+                <div style={{ padding: "14px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1", textAlign: "center", color: "#64748b", fontSize: "0.88rem" }}>
+                  No available slots found for this date. Please pick another date.
+                </div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(105px, 1fr))", gap: "8px", maxHeight: "170px", overflowY: "auto", padding: "4px" }}>
+                  {rescheduleSlots.map((slot) => {
+                    const isSelected = selectedRescheduleSlot?.startsAt === slot.startsAt;
+                    const timeLabel = new Date(slot.startsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                    return (
+                      <button
+                        key={slot.startsAt}
+                        type="button"
+                        onClick={() => setSelectedRescheduleSlot(slot)}
+                        style={{
+                          padding: "8px 10px",
+                          borderRadius: "8px",
+                          border: isSelected ? "2px solid #2563eb" : "1px solid #cbd5e1",
+                          background: isSelected ? "#eff6ff" : "#ffffff",
+                          color: isSelected ? "#1d4ed8" : "#334155",
+                          fontWeight: isSelected ? 700 : 500,
+                          fontSize: "0.88rem",
+                          cursor: "pointer",
+                          transition: "all 0.15s ease"
+                        }}
+                      >
+                        {timeLabel}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Reschedule Reason / Note */}
+            <div style={{ marginBottom: "18px" }}>
+              <label style={{ display: "block", fontSize: "0.88rem", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>
+                Reason for Rescheduling (Optional)
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Doctor / Patient unavailable, missed earlier slot"
+                value={rescheduleReason}
+                onChange={(e) => setRescheduleReason(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "9px 12px",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e1",
+                  fontSize: "0.9rem",
+                  fontFamily: "inherit"
+                }}
+              />
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button
+                type="button"
+                onClick={() => setRescheduleModalAppointment(null)}
+                style={{
+                  padding: "9px 18px",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e1",
+                  background: "#f8fafc",
+                  color: "#475569",
+                  fontWeight: 600,
+                  cursor: "pointer"
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={busy || !selectedRescheduleSlot}
+                onClick={() => confirmReschedule()}
+                style={{
+                  padding: "9px 20px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "#2563eb",
+                  color: "#ffffff",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  opacity: busy || !selectedRescheduleSlot ? 0.6 : 1
+                }}
+              >
+                {busy ? "Rescheduling..." : "Confirm Reschedule"}
               </button>
             </div>
           </div>

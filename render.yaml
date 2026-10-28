@@ -26,6 +26,8 @@ services:
     plan: free
     healthCheckPath: /actuator/health/readiness
     envVars:
+      - key: PORT
+        value: 8080
       - key: DATABASE_URL
         fromDatabase:
           name: careflow-db
@@ -43,6 +45,11 @@ services:
           type: redis
           name: careflow-redis
           property: host
+      - key: REDIS_PORT
+        fromService:
+          type: redis
+          name: careflow-redis
+          property: port
       - key: AI_SERVICE_URL
         value: http://careflow-ai-service:8000
       - key: JWT_SECRET
@@ -54,7 +61,7 @@ services:
       - key: BOOTSTRAP_ADMIN_PASSWORD
         value: CareFlowAdmin!2026
       - key: HOSPITAL_ENVIRONMENT
-        value: development
+        value: production
       - key: HOSPITAL_TIMEZONE
         value: Asia/Kolkata
       - key: WEB_ORIGIN

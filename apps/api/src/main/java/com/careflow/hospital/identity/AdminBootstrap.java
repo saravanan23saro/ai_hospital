@@ -16,8 +16,7 @@ public class AdminBootstrap implements ApplicationRunner {
     if (password.length() < 12)
       throw new IllegalStateException("Bootstrap admin password must contain at least 12 characters");
     users.findByEmailIgnoreCase(email.strip().toLowerCase(Locale.ROOT)).orElseGet(() -> {
-      var user = new AppUser(UUID.randomUUID(), email.strip().toLowerCase(Locale.ROOT), passwords.encode(password));
-      user.addRole("ADMIN");
+      var user = new AppUser(UUID.randomUUID(), email.strip().toLowerCase(Locale.ROOT), passwords.encode(password), "ADMIN");
       return users.save(user);
     });
   }

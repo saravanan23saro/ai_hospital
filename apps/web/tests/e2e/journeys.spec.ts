@@ -1,21 +1,24 @@
 import { expect, test } from "@playwright/test";
 
-test("homepage provides one patient and staff sign-in entry", async ({ page }) => {
+test("homepage provides patient, doctor, staff, and admin sign-in entry", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Welcome to CareFlow." })).toBeVisible();
-  await expect(page.getByLabel("Continue as")).toHaveValue("patient");
-  await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Welcome to CareFlow" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /patient/i })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /doctor/i })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /staff/i })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /admin/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /sign in/i })).toBeVisible();
 });
 
 test("a patient can register, complete a profile, and sign out", async ({ page }) => {
   const unique = `${Date.now()}-${test.info().retry}`;
   await page.goto("/");
-  await page.getByLabel("Continue as").selectOption("patient-register");
-  await page.getByLabel("Full name").fill("Journey Test Patient");
-  await page.getByLabel("Email").fill(`journey-${unique}@careflow.test`);
+  await page.getByRole("button", { name: /register as a patient/i }).click();
+  await page.getByLabel("Full Name").fill("Journey Test Patient");
+  await page.getByLabel(/email address or 10-digit phone number/i).fill(`journey-${unique}@careflow.test`);
   await page.getByLabel("Password", { exact: true }).fill("JourneyTest!2026");
-  await page.getByLabel("Confirm password").fill("JourneyTest!2026");
-  await page.getByRole("button", { name: "Create account" }).click();
+  await page.getByLabel("Confirm Password").fill("JourneyTest!2026");
+  await page.getByRole("button", { name: /register account/i }).click();
 
   await expect(page).toHaveURL(/\/patient$/);
   await page.getByRole("button", { name: "Profile", exact: true }).click();
@@ -32,36 +35,33 @@ test("a patient can register, complete a profile, and sign out", async ({ page }
   await expect(page.getByText("Patient profile saved.")).toBeVisible();
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /sign in to your account/i })).toBeVisible();
 });
 
-test("a prospective staff member can create an account and start a doctor application", async ({ page }) => {
-  const unique = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+test("staff and doctor registration is restricted; staff portal displays staff modules and no doctor application", async ({ page }) => {
   await page.goto("/");
-  await page.getByLabel("Continue as").selectOption("staff-register");
-  await page.getByLabel("Full name").fill("Dr Staff Applicant");
-  await page.getByLabel("Email").fill(`staff-${unique}@example.test`);
-  await page.getByLabel("Password", { exact: true }).fill("Staff-password-2026!");
-  await page.getByLabel("Confirm password").fill("Staff-password-2026!");
-  await page.getByRole("button", { name: "Create account" }).click();
+  // Select Staff tab
+  await page.getByRole("tab", { name: /staff/i }).click();
+  await expect(page.getByText(/provisioned exclusively by Hospital Administration/i)).toBeVisible();
+  // Ensure "Register as a Patient" button is not visible when Staff tab is active
+  await expect(page.getByRole("button", { name: /register as a patient/i })).not.toBeVisible();
 
-  await expect(page).toHaveURL(/\/staff$/);
-  await expect(page.getByRole("heading", { name: "Apply as a doctor" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Open account menu" })).toBeVisible();
+  // Select Doctor tab
+  await page.getByRole("tab", { name: /doctor/i }).click();
+  await expect(page.getByText(/provisioned exclusively by Hospital Administration/i)).toBeVisible();
 });
 
-test("the bootstrap administrator can open doctor approvals", async ({ page }) => {
+test("the bootstrap administrator can sign in and manage hospital operations", async ({ page }) => {
   const adminEmail = process.env.BOOTSTRAP_ADMIN_EMAIL || "admin@careflow.local";
   await page.goto("/");
-  await page.getByLabel("Continue as").selectOption("staff");
-  await page.getByLabel("Email").fill(adminEmail);
+  await page.getByRole("tab", { name: /admin/i }).click();
+  await page.getByLabel(/email address or 10-digit phone number/i).fill(adminEmail);
   await page.getByLabel("Password").fill(process.env.BOOTSTRAP_ADMIN_PASSWORD || "CareFlowAdmin!2026");
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: /sign in/i }).click();
 
-  await expect(page).toHaveURL(/\/staff$/);
-
-  await page.getByRole("button", { name: "Doctor approvals" }).click();
-  await page.getByRole("button", { name: "Open account menu" }).click();
+  await expect(page).toHaveURL(/\/operations$/);
   await expect(page.getByText(adminEmail)).toBeVisible();
-  await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(/\/$/);
 });
+

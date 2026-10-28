@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { clearStoredSession, sessionFetch } from "../lib/session";
-import { Language, useLanguage } from "../lib/i18n";
+import { getLocalizedDisplayName, Language, useLanguage } from "../lib/i18n";
 import {
   Search,
   Bell,
@@ -16,6 +16,7 @@ import {
   Settings,
   LogOut,
   Globe,
+  Shield,
 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8180";
@@ -58,7 +59,7 @@ export default function AppHeader({
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState(3);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
 
   const profileRef = useRef<HTMLDivElement>(null);
@@ -78,29 +79,63 @@ export default function AppHeader({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const userKey = user ? `${user.userId || ""}-${user.email || ""}-${(user.roles || []).join(",")}` : "";
+  const isPatientOnly = Boolean(
+    user?.roles?.includes("PATIENT") &&
+    !user?.roles?.includes("ADMIN") &&
+    !user?.roles?.includes("STAFF") &&
+    !user?.roles?.includes("DOCTOR")
+  );
+
   // Fetch in-app notifications
   useEffect(() => {
-    if (user) {
+    if (userKey) {
       fetchNotifications();
     }
-  }, [user]);
+  }, [userKey]);
 
   async function fetchNotifications() {
     try {
-      const res = await sessionFetch(API, "/api/v1/patients/me/appointments").catch(() => null);
+      // 1. Fetch real in-app notifications from the backend NotificationController
+      const res = await sessionFetch(API, "/api/v1/notifications").catch(() => null);
       if (res && res.ok) {
-        const appts = await res.json().catch(() => []);
-        if (Array.isArray(appts) && appts.length > 0) {
-          const notifs: NotificationItem[] = appts.slice(0, 5).map((a: any) => ({
-            notificationId: a.appointmentId,
-            subject: `Appointment ${a.appointmentNumber}`,
-            body: `Status: ${a.status} on ${new Date(a.startsAt).toLocaleString()}`,
-            status: a.status === "COMPLETED" ? "READ" : "SENT",
+        const notifs = await res.json().catch(() => []);
+        if (Array.isArray(notifs) && notifs.length > 0) {
+          const mapped: NotificationItem[] = notifs.map((n: any) => ({
+            notificationId: n.notificationId,
+            subject: n.subject || "Notification",
+            body: n.body || "",
+            status: n.status || "SENT",
+            createdAt: n.createdAt,
           }));
-          setNotifications(notifs);
-          setUnreadCount(notifs.filter((n) => n.status !== "READ").length || 3);
+          setNotifications(mapped);
+          setUnreadCount(mapped.filter((n) => n.status !== "READ").length);
+          return;
         }
       }
+
+      // 2. Fallback to appointments ONLY for patient users who have no notifications
+      if (isPatientOnly) {
+        const apptRes = await sessionFetch(API, "/api/v1/patients/me/appointments").catch(() => null);
+        if (apptRes && apptRes.ok) {
+          const appts = await apptRes.json().catch(() => []);
+          if (Array.isArray(appts) && appts.length > 0) {
+            const mapped: NotificationItem[] = appts.slice(0, 5).map((a: any) => ({
+              notificationId: a.appointmentId,
+              subject: `Appointment ${a.appointmentNumber}`,
+              body: `Status: ${a.status} on ${new Date(a.startsAt).toLocaleString()}`,
+              status: a.status === "COMPLETED" ? "READ" : "SENT",
+              createdAt: a.startsAt,
+            }));
+            setNotifications(mapped);
+            setUnreadCount(mapped.filter((n) => n.status !== "READ").length);
+            return;
+          }
+        }
+      }
+
+      setNotifications([]);
+      setUnreadCount(0);
     } catch {
       // Ignore background notification fetch errors
     }
@@ -113,14 +148,14 @@ export default function AppHeader({
 
   const roleName =
     user?.roles?.includes("DOCTOR")
-      ? "Doctor"
+      ? t.doctorRole || "Doctor"
       : user?.roles?.includes("ADMIN")
-      ? "Administrator"
+      ? t.adminRole || "Admin"
       : user?.roles?.includes("STAFF")
-      ? "Medical Staff"
-      : "Patient";
+      ? t.staffRole || "Staff"
+      : t.patientRole || "Patient";
 
-  const displayName =
+  const rawName =
     user?.fullName && user.fullName !== "Patient Account" && user.fullName !== "Staff Member"
       ? user.fullName
       : user?.email
@@ -128,6 +163,8 @@ export default function AppHeader({
       : user?.roles?.includes("DOCTOR")
       ? "Doctor User"
       : "Mary";
+
+  const displayName = getLocalizedDisplayName(rawName, currentLang);
 
   const firstLetter = displayName.trim().charAt(0).toUpperCase() || "M";
 
@@ -166,18 +203,17 @@ export default function AppHeader({
       {/* RIGHT ACTION ITEMS */}
       <div className="header-actions">
         {/* GLOBAL LANGUAGE SELECTOR DROPDOWN */}
-        <div className="header-lang-selector" style={{ display: "flex", alignItems: "center", gap: "6px", background: "#f8fafc", padding: "4px 8px", borderRadius: "8px", border: "1px solid #dce7ef" }}>
-          <Globe size={16} style={{ color: "#1689D8" }} />
+        <div className="header-lang-selector" style={{ display: "flex", alignItems: "center", gap: "6px", background: "#FAF8F4", padding: "4px 8px", borderRadius: "8px", border: "1px solid #E7DED2" }}>
+          <Globe size={16} style={{ color: "#A67C52" }} />
           <select
             value={currentLang}
             onChange={(e) => setLang(e.target.value as Language)}
-            style={{ background: "transparent", border: "none", fontSize: "0.825rem", fontWeight: 600, color: "#102a43", cursor: "pointer", outline: "none" }}
+            style={{ background: "transparent", border: "none", fontSize: "0.825rem", fontWeight: 600, color: "#3D3228", cursor: "pointer", outline: "none" }}
             aria-label="Select portal language"
           >
             <option value="en">English</option>
             <option value="ta">தமிழ் (Tamil)</option>
             <option value="hi">हिंदी (Hindi)</option>
-            <option value="es">Español (Spanish)</option>
           </select>
         </div>
         {/* NOTIFICATIONS */}
@@ -256,12 +292,52 @@ export default function AppHeader({
                 </div>
               </div>
               <div className="popover-menu-items">
+                {user?.roles?.includes("ADMIN") && (
+                  <button
+                    type="button"
+                    style={{ background: "#F7F1E8", color: "#3D3228", fontWeight: 700 }}
+                    onClick={() => {
+                      setProfileOpen(false);
+                      router.push("/operations");
+                    }}
+                  >
+                    <Shield size={16} style={{ color: "#A67C52" }} /> Admin & Operations
+                  </button>
+                )}
+                {user?.roles?.includes("DOCTOR") && (
+                  <button
+                    type="button"
+                    style={{ background: "#F7F1E8", color: "#3D3228", fontWeight: 700 }}
+                    onClick={() => {
+                      setProfileOpen(false);
+                      router.push("/doctor");
+                    }}
+                  >
+                    <User size={16} style={{ color: "#A67C52" }} /> Doctor Portal
+                  </button>
+                )}
+                {user?.roles?.includes("STAFF") && !user?.roles?.includes("ADMIN") && !user?.roles?.includes("DOCTOR") && (
+                  <button
+                    type="button"
+                    style={{ background: "#F7F1E8", color: "#3D3228", fontWeight: 700 }}
+                    onClick={() => {
+                      setProfileOpen(false);
+                      router.push("/staff");
+                    }}
+                  >
+                    <User size={16} style={{ color: "#A67C52" }} /> Staff Portal
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => {
                     setProfileOpen(false);
                     if (onNavigateView) onNavigateView("profile");
                     else if (onProfileClick) onProfileClick();
+                    else if (user?.roles?.includes("DOCTOR")) router.push("/doctor");
+                    else if (user?.roles?.includes("STAFF")) router.push("/staff");
+                    else if (user?.roles?.includes("ADMIN")) router.push("/operations");
+                    else router.push("/patient?view=profile");
                   }}
                 >
                   <User size={16} /> {t.profile}
@@ -271,24 +347,33 @@ export default function AppHeader({
                   onClick={() => {
                     setProfileOpen(false);
                     if (onNavigateView) onNavigateView("appointments");
+                    else if (user?.roles?.includes("DOCTOR")) router.push("/doctor");
+                    else if (user?.roles?.includes("STAFF")) router.push("/staff");
+                    else router.push("/patient?view=appointments");
                   }}
                 >
                   <Calendar size={16} /> {t.appointments}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setProfileOpen(false);
-                    if (onNavigateView) onNavigateView("prescriptions");
-                  }}
-                >
-                  <FileText size={16} /> {t.myPrescriptions}
-                </button>
+                {(!user?.roles || user.roles.includes("PATIENT")) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileOpen(false);
+                      if (onNavigateView) onNavigateView("prescriptions");
+                      else router.push("/patient?view=prescriptions");
+                    }}
+                  >
+                    <FileText size={16} /> {t.myPrescriptions}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => {
                     setProfileOpen(false);
                     if (onNavigateView) onNavigateView("payments");
+                    else if (user?.roles?.includes("ADMIN")) router.push("/operations");
+                    else if (user?.roles?.includes("STAFF")) router.push("/staff");
+                    else router.push("/patient?view=payments");
                   }}
                 >
                   <CreditCard size={16} /> {t.paymentsInvoices}
@@ -298,6 +383,7 @@ export default function AppHeader({
                   onClick={() => {
                     setProfileOpen(false);
                     if (onNavigateView) onNavigateView("settings");
+                    else router.push("/patient?view=settings");
                   }}
                 >
                   <Settings size={16} /> {t.settings}
@@ -314,3 +400,4 @@ export default function AppHeader({
     </header>
   );
 }
+

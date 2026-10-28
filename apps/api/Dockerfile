@@ -5,9 +5,10 @@ RUN mvn -q -DskipTests dependency:go-offline
 COPY src ./src
 RUN mvn -q package -DskipTests
 FROM eclipse-temurin:21-jre-alpine
-RUN apk upgrade --no-cache && addgroup -S app && adduser -S app -G app
+RUN addgroup -S app && adduser -S app -G app
 USER app
 WORKDIR /app
 COPY --from=build /src/target/hospital-api-0.1.0.jar app.jar
+ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError"
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","app.jar"]

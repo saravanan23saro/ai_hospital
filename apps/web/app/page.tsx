@@ -54,19 +54,21 @@ export default function HomePage() {
   function handleRoleSelect(role: UserRole) {
     setActiveRole(role);
     setError("");
-    if (choice.endsWith("-register")) {
-      setChoice(role === "patient" ? "patient-register" : "staff-register");
+    setNotice("");
+    if (role !== "patient") {
+      setChoice("staff");
     } else {
-      setChoice(role === "patient" ? "patient" : "staff");
+      setChoice(choice.endsWith("-register") ? "patient-register" : "patient");
     }
   }
 
   function toggleRegistrationMode() {
     setError("");
-    if (choice.endsWith("-register")) {
-      setChoice(activeRole === "patient" ? "patient" : "staff");
+    if (activeRole !== "patient") return;
+    if (choice === "patient-register") {
+      setChoice("patient");
     } else {
-      setChoice(activeRole === "patient" ? "patient-register" : "staff-register");
+      setChoice("patient-register");
     }
   }
 
@@ -149,7 +151,9 @@ export default function HomePage() {
       const targetRoute =
         activeRole === "admin"
           ? "/operations"
-          : activeRole === "doctor" || activeRole === "staff"
+          : activeRole === "doctor"
+          ? "/doctor"
+          : activeRole === "staff"
           ? "/staff"
           : "/patient";
 
@@ -177,7 +181,6 @@ export default function HomePage() {
           <option value="en">English</option>
           <option value="hi">Hindi (हिंदी)</option>
           <option value="ta">Tamil (தமிழ்)</option>
-          <option value="es">Spanish (Español)</option>
         </select>
       </div>
 
@@ -463,7 +466,11 @@ export default function HomePage() {
 
             {/* ACCOUNT CREATION FOOTER LINK */}
             <div className="create-account-footer">
-              {choice.endsWith("-register") ? (
+              {activeRole !== "patient" ? (
+                <span style={{ fontSize: "0.85rem", color: "#78716c", textAlign: "center", display: "block" }}>
+                  Staff, Doctor, and Admin accounts are provisioned exclusively by Hospital Administration.
+                </span>
+              ) : choice.endsWith("-register") ? (
                 <>
                   <span>{t.haveAccountPrompt}</span>{" "}
                   <button type="button" className="create-account-btn" onClick={toggleRegistrationMode}>
