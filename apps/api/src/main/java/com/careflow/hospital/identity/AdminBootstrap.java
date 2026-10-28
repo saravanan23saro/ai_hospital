@@ -9,7 +9,10 @@ public class AdminBootstrap implements ApplicationRunner {
   @Override @Transactional
   public void run(ApplicationArguments args) {
     if (email.isBlank() && password.isBlank()) return;
-    if (!Set.of("development", "test").contains(environment.toLowerCase(Locale.ROOT)))
+    if (!Set.of("development", "test").contains(environment.toLowerCase(Locale.ROOT))
+        && !"true".equalsIgnoreCase(System.getenv("RENDER"))
+        && System.getenv("RENDER_SERVICE_ID") == null
+        && !"true".equalsIgnoreCase(System.getenv("ALLOW_ADMIN_BOOTSTRAP")))
       throw new IllegalStateException("Bootstrap administrator is allowed only in development or test environments");
     if (email.isBlank() || password.isBlank())
       throw new IllegalStateException("Both bootstrap administrator email and password are required");
