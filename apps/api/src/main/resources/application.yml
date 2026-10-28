@@ -20,7 +20,7 @@ server:
   error.include-stacktrace: never
   error.include-message: never
 hospital:
-  environment: ${HOSPITAL_ENVIRONMENT:production}
+  environment: ${HOSPITAL_ENVIRONMENT:development}
   timezone: ${HOSPITAL_TIMEZONE:Asia/Kolkata}
   ai-service-url: ${AI_SERVICE_URL:http://localhost:8000}
   web-origin: ${WEB_ORIGIN:http://localhost:3200}
